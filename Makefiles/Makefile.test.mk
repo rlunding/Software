@@ -20,6 +20,7 @@ test-circle: \
 	test-comptests \
 	test-download-logs \
 	test-line-detector-programmatic
+
 	#
 	# test-catkin_tests \
 	# test-anti_instagram
@@ -37,7 +38,8 @@ comptests_packages=\
 	easy_logs_tests\
 	easy_algo_tests\
 	duckietown_utils_tests\
-	what_the_duck_tests
+	what_the_duck_tests\
+	easy_regression_tests
 
 comptests_out=out/comptests
 
@@ -76,3 +78,4 @@ test-cloud-logs: cloud-download
 test-line-detector-programmatic: test-download-logs
 	rosrun easy_logs download $(onelog)
 	rosrun line_detector2 programmatic --logs $(onelog) --algos all --reset -c parmake
+ 
