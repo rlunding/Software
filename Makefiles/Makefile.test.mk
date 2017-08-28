@@ -81,5 +81,13 @@ test-line-detector-programmatic: test-download-logs
 	rosrun line_detector2 programmatic --logs $(onelog) --algos all --reset -c parmake
 
 
-test-regression-simple:
+test-regression-simple: cloud-download
 	rosrun easy_regression run --tests simple1  --reset --cloud
+
+test-documentation:
+	DISABLE_CONTRACTS=1 mcdp-render-manual \
+	--src $(src) \
+	--stylesheet v_manual_split \
+	--mathjax 0 \
+	-o /dev/null \
+	--output_file $(out_html).tmp -c "config echo 1; config colorize 0; rmake"
