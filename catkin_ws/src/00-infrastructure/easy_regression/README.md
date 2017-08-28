@@ -10,7 +10,7 @@ TODO: to write
 
 ## Formalization
 
-Note: These are incomplete design logs.
+Note: These are incomplete design notes.
 
 A regression test is given by:
 
@@ -30,32 +30,32 @@ the logs.)
 A physical log is a physical .bag file. These are generated
 
 
-   regression1.regression_test.yaml
+    regression1.regression_test.yaml
 
-   description:
+    description:
     Simple regression test.
-
-   logs:
-   - "vehicle:ferrari,length:<10"
-   processors:
-   - transformer: Identity
-   stats:
-   visualizers:
-
-
-
-   identity.job_processors.yaml
-   description:
-   constructor: IdentityProcessor
-   parameters:
+    a
+    logs:
+    - "vehicle:ferrari,length:<10"
+    processors:
+    - transformer: Identity
+    stats:
+    visualizers:
 
 
-   count:
+
+    identity.job_processors.yaml
+    description:
+    constructor: IdentityProcessor
+    parameters:
 
 
-   S is a dict of YAML
+    count:
 
-   processor: Bag -> Bag
-   analyzer: Bag -> S
-   reduce: S x S -> S
-   display_test: S -> Display
+
+    S is a dict of YAML
+
+    processor: Bag -> Bag
+    analyzer: Bag -> S
+    reduce: S x S -> S
+    display_test: S -> Display

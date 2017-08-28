@@ -85,9 +85,11 @@ test-regression-simple: cloud-download
 	rosrun easy_regression run --tests simple1  --reset --cloud
 
 test-documentation:
+	touch catkin_ws/00_main_template.html
 	DISABLE_CONTRACTS=1 mcdp-render-manual \
-	--src $(src) \
+	--src $(catkin_ws) \
 	--stylesheet v_manual_split \
 	--mathjax 0 \
-	-o /dev/null \
-	--output_file $(out_html).tmp -c "config echo 1; config colorize 0; rmake"
+	-o out/test-documentation \
+	--output_file $(out_html).tmp -c "config echo 1; config colorize 0; rparmake"
+	rm -f catkin_ws/00_main_template.html
