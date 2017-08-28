@@ -19,7 +19,8 @@ test:
 test-circle: \
 	test-comptests \
 	test-download-logs \
-	test-line-detector-programmatic
+	test-line-detector-programmatic \
+	test-regression-simple
 
 	#
 	# test-catkin_tests \
@@ -78,4 +79,7 @@ test-cloud-logs: cloud-download
 test-line-detector-programmatic: test-download-logs
 	rosrun easy_logs download $(onelog)
 	rosrun line_detector2 programmatic --logs $(onelog) --algos all --reset -c parmake
- 
+
+
+test-regression-simple:
+	rosrun easy_regression run --tests simple1  --reset --cloud

@@ -12,6 +12,7 @@ from easy_regression.cli.analysis_and_stat import job_analyze, job_merge,\
     print_results
 from easy_regression.cli.processing import process_one
 from easy_regression.regression_test import RegressionTest
+from easy_logs.cli.require import get_log_if_not_exists
 
 
 ALL_LOGS = 'all logs'
@@ -41,7 +42,6 @@ class RunRegressionTest(D8AppWithLogs, QuickApp):
 @contract(rt=RegressionTest)
 def jobs_rt(context, rt, easy_logs_db, out):
     
-    
     logs = rt.get_logs(easy_logs_db)
     
     processors = rt.get_processors()
@@ -61,7 +61,8 @@ def jobs_rt(context, rt, easy_logs_db, out):
         c = context.child(log_name)
         # process one 
         log_out = os.path.join(out, 'logs', log_name + '/'  + 'out.bag')
-        log_out_ = c.comp(process_one, log, processors, log_out, job_id=log_name)
+        bag_filename = c.comp(get_log_if_not_exists, easy_logs_db.logs, log_name)
+        log_out_ = c.comp(process_one, bag_filename, processors, log_out, job_id=log_name)
         
         for a in analyzers:
             results_all[a][log_name] = c.comp(job_analyze, log_out_, a, job_id=a) 
@@ -70,6 +71,7 @@ def jobs_rt(context, rt, easy_logs_db, out):
         results_all[a][ALL_LOGS] = context.comp(job_merge, results_all[a], a)
     
     context.comp(print_results, analyzers, results_all, out)
+
 
     
 

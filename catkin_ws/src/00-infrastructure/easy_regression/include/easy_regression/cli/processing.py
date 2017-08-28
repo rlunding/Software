@@ -8,8 +8,9 @@ from easy_algo.algo_db import get_easy_algo_db
 import rosbag  # @UnresolvedImport
 
 
-def process_one(log, processors, log_out):
+def process_one(bag_filename, processors, log_out):
     logger.info('job_one()')
+    logger.info('   input: %s' % bag_filename)
     logger.info('   processors: %s' % processors)
     logger.info('   out: %s' % log_out)
     
@@ -24,7 +25,6 @@ def process_one(log, processors, log_out):
     processors_instances = [easy_algo_db.create_instance('processor', _) 
                             for _ in processors]
     
-    bag_filename = log.filename
     tmpfiles = []
     
     try:
@@ -51,7 +51,7 @@ def process_one(log, processors, log_out):
         # just create symlink
         logger.info('(Just creating symlink, because there '
                     'was no processing done.)')
-        os.symlink(os.path.realpath(log.filename), log_out)
+        os.symlink(os.path.realpath(bag_filename), log_out)
     else:
         shutil.copy(bag_filename, log_out)
     logger.info('I created %s' % log_out)
