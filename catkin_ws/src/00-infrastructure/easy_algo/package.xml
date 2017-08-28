@@ -2,7 +2,10 @@
 <package>
   <name>easy_algo</name>
   <version>1.0.0</version>
-  <description>The `easy_algo` package</description>
+  <description>
+A package to make it easy to abstract about algorithm configuration
+andcreate regression tests.
+  </description>
 
   <author email="acensi@idsc.mavt.ethz.ch">Andrea Censi</author>
   <maintainer email="acensi@idsc.mavt.ethz.ch">Andrea Censi</maintainer>
