@@ -4,9 +4,9 @@ jobs:
      docker:
         - image: andreacensi/duckietown-xenial-kinetic:17
           environment:
-              DUCKIEFLEET_ROOT: duckiefleet
+              DUCKIEFLEET_ROOT: /root/duckiefleet
               DUCKIETOWN_ROOT: /root/project
-              DUCKIETOWN_DATA: duckietown-data
+              DUCKIETOWN_DATA: /root/duckietown-data
      parallelism: 1
      steps:
         - checkout
@@ -24,11 +24,14 @@ jobs:
         - run:
             name: build
             command: |
-                echo PWD = $PWD
+
                 source /opt/ros/kinetic/setup.bash
 
+                echo PWD = $PWD
                 mkdir -p $DUCKIETOWN_DATA
                 mkdir -p $DUCKIEFLEET_ROOT
+
+                export ROS_LANG_DISABLE=gennodejs:geneus:genlisp
                 make build-catkin-parallel-max
 
         - run:
@@ -37,7 +40,7 @@ jobs:
                 source /opt/ros/kinetic/setup.bash
                 source $PWD/catkin_ws/devel/setup.bash
 
-                
+
                 export HOSTNAME=$HOSTNAME
 
 
