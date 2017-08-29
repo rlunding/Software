@@ -6,7 +6,7 @@ from duckietown_utils.instantiate_utils import indent
 from duckietown_utils.system_cmd_imp import contract
 
 from .interface import RTCheck
-from .result_db import ResultDB
+from .result_db import ResultDB, AmbiguousQuery
 
 
 class EvaluationError(Exception):
@@ -14,6 +14,7 @@ class EvaluationError(Exception):
 
 class DataNotFound(Exception):
     pass
+
 
 class Evaluable():
     __metaclass__ = ABCMeta
@@ -23,12 +24,25 @@ class Evaluable():
     def eval(self, rdb):
         """ Raise EvaluationError or DataNotFound """
 
+class ResultWithDescription():
+    def __init__(self, value, desc):
+        self.value = value
+        self.desc = desc
+    
+    def __bool__(self):
+        return self.value
+        
+    def __str__(self):
+        return '%s { %s }' % (self.value, self.desc)
+        
 
 class Wrapper(RTCheck):
     
     def __init__(self, evaluable):
         self.evaluable = evaluable
         
+    def __str__(self):
+        return self.evaluable.__str__()
     # @contract(returns=CheckResult, result_db=ResultDB)
     def check(self, rdb):
         """ 
@@ -39,26 +53,30 @@ class Wrapper(RTCheck):
         
         try: 
             res = self.evaluable.eval(rdb)
-            if not isinstance(res, bool):
-                msg = 'Invalid non-boolean result obtained: %s' % res.__repr__()
+            if not isinstance(res, ResultWithDescription):
+                msg = 'Expected ResultWithDescription, obtained %s' % res.__repr__()
                 return RTCheck.CheckResult(
                    status=RTCheck.ABNORMAL,
                    summary='Invalid test',
                    details=msg) 
-            if res == True:
+            if res.__bool__() == True:
                 return RTCheck.CheckResult(
                    status=RTCheck.OK,
                    summary='OK',
-                   details='')
-            if res == False:
+                   details=res.desc)
+            if res.__bool__() == False:
                 return RTCheck.CheckResult(
                    status=RTCheck.FAIL,
                    summary='Failed',
-                   details='')
-            
-        except DataNotFound as e:
+                   details=res.desc)
+        except AmbiguousQuery as e:
             return RTCheck.CheckResult(
                status=RTCheck.FAIL,
+               summary='Ambiguous query',
+               details=str(e))
+        except DataNotFound as e:
+            return RTCheck.CheckResult(
+               status=RTCheck.NODATA,
                summary='No data available',
                details=str(e))
         except EvaluationError as e:

@@ -4,9 +4,9 @@ from easy_regression.conditions.interface import RTParseError
 
 from .values import parse_float
 from duckietown_utils.text_utils import remove_prefix_suffix, remove_suffix
-from easy_regression.conditions.eval import EvaluationError
+from easy_regression.conditions.eval import EvaluationError,\
+    ResultWithDescription
 from duckietown_utils.exception_utils import raise_wrapped
-
 
 def parse_binary(s):
     """
@@ -19,6 +19,7 @@ def parse_binary(s):
             <
             
             ==[10%]
+            !=
             
             contains
         
@@ -34,6 +35,7 @@ def parse_binary(s):
         '<=': lte, 
         '<': lt,
         '==': eq,
+        '!=': neq, 
         'contains': contains,
     }
     if s in simple:
@@ -66,7 +68,9 @@ def float_op(f):
             try:
                 expect_float(a)
                 expect_float(b)
-                return f(a, b)
+                val =  f(a, b)
+                desc = '%s %s %s' % (a, f.__name__, b)
+                return ResultWithDescription(val, desc)
             except EvaluationError as e:
                 msg = 'While evaluating %s(%s, %s)' % (f.__name__, a, b)
                 raise_wrapped(EvaluationError, e, msg, compact=True)
@@ -98,6 +102,10 @@ def gte(a, b):
 def eq(a, b):
     return a == b
 
+@float_op
+def neq(a, b):
+    return a != b
+
 def expect_float(x):
     if not isinstance(x, (float,int)):
         msg = 'Expected a number, got %s.' % x.__repr__() 
@@ -111,6 +119,13 @@ class CompareApproxRelative():
     
     def __call__(self, a, b):
         delta = self.rel_error * a
-        return a - delta <= b <= a + delta
+        lb = a-delta
+        ub = a+delta
+        res = lb <= b <= ub
+        desc = 'Condition checked:\n   %s <= %s <= %s.' % (lb,b,ub)
+        return ResultWithDescription(res, desc)
+    
+    def __str__(self):
+        return 'EqualUpTo(%g%%)' % (100 * self.rel_error)
     
     

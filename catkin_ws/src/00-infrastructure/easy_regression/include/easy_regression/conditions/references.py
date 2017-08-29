@@ -5,6 +5,8 @@ from duckietown_utils.system_cmd_imp import contract
 from duckietown_utils.text_utils import remove_prefix, string_split
 from easy_regression.conditions.eval import Evaluable, EvaluationError
 from easy_regression.conditions.interface import RTParseError
+from easy_regression.conditions.result_db import ResultDBEntry
+from contracts.utils import check_isinstance
 
 
 def parse_reference(s):
@@ -42,8 +44,10 @@ def parse_reference(s):
         analyzer = tokens[0]
         log = tokens[1]
         statistic = tuple(tokens[2:]) 
+        commit = None
             
-        return StatisticReference(analyzer=analyzer, log=log, statistic=statistic, branch=branch_spec, date=date)
+        return StatisticReference(analyzer=analyzer, log=log, statistic=statistic, 
+                                  branch=branch_spec, date=date, commit=commit)
     
     try:
         c = yaml.load(s)
@@ -63,30 +67,32 @@ def parse_date_spec(d):
 class StatisticReference(Evaluable):
     
     @contract(statistic='seq(str)')
-    def __init__(self, analyzer, log, statistic, branch, date):
+    def __init__(self, analyzer, log, statistic, branch, date, commit):
         self.analyzer = analyzer
         self.log = log
         self.statistic = statistic
         self.branch = branch
         self.date = date
+        self.commit = commit
     
     def __str__(self):
         return ('StatisticReference(%s,%s,%s,%s,%s)' % 
                 (self.analyzer, self.log, self.statistic, self.branch, self.date))
         
     def eval(self, rdb):
-        if self.branch is None and self.date is None:
-            results = rdb.get_current_results()
-            
-            check_is_in('analyzer', self.analyzer, results, EvaluationError)
-            logs = results[self.analyzer]
-            check_is_in('log', self.log, logs, EvaluationError)
-            forlog = logs[self.log]
-            val = eval_name(forlog, self.statistic)
-            return val
-        else:
-            raise NotImplementedError()
-
+        db_entry = rdb.query_results_one(branch=self.branch,
+                                  date=self.date,
+                                  commit=self.commit)
+        check_isinstance(db_entry, ResultDBEntry)
+#         print('Results= %s' % db_entry.__repr__())
+        results = db_entry.results
+        check_is_in('analyzer', self.analyzer, results, EvaluationError)
+        logs = results[self.analyzer]
+        check_is_in('log', self.log, logs, EvaluationError)
+        forlog = logs[self.log]
+        val = eval_name(forlog, self.statistic)
+        return val
+    
 @contract(name_tuple=tuple)
 def eval_name(x, name_tuple):
     if not name_tuple:

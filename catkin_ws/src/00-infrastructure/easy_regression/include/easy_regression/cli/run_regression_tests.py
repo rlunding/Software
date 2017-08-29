@@ -28,8 +28,8 @@ class RunRegressionTest(D8AppWithLogs, QuickApp):
         easy_algo_db = get_easy_algo_db()
         
         query = self.options.tests
-        regression_tests = easy_algo_db.query('regression_test', query)
-        print(regression_tests)
+        regression_tests = easy_algo_db.query('regression_test', query, raise_if_no_matches=True)
+        
         for r in regression_tests:
             rt = easy_algo_db.create_instance('regression_test', r)
             
