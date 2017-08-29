@@ -3,8 +3,7 @@ from comptests.registrar import comptest, run_module_tests
 
 from termcolor import colored
 
-from duckietown_utils.text_utils import get_length_on_screen, format_table_plus, remove_escapes,\
-    make_row_red
+from duckietown_utils.text_utils import get_length_on_screen, format_table_plus, remove_escapes, make_row_red
 
 
 @comptest
