@@ -64,9 +64,13 @@ class RTCheck():
             
                 v:analyzer/log/statistics ==[10%] v:analyzer/log/statistic@date  
 
-            Use `#branch@date` to reference the value of a branch at a certain date
+            Use `~branch@date` to reference the value of a branch at a certain date
             
-                v:analyzer/log/statistics ==[10%] v:analyzer/log/statistic#branch@date  
+                v:analyzer/log/statistics ==[10%] v:analyzer/log/statistic~branch@date  
+            
+            Use `?commit` to reference the value of a branch at a specific commit:
+            
+                v:analyzer/log/statistics ==[10%] v:analyzer/log/statistic?commit
                 
             Other checks:
             

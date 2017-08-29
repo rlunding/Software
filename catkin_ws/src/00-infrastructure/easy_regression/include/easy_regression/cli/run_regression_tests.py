@@ -9,10 +9,8 @@ from duckietown_utils.exceptions import wrap_script_entry_point, DTUserError
 from duckietown_utils.system_cmd_imp import contract
 from easy_algo.algo_db import get_easy_algo_db
 from easy_logs.cli.require import get_log_if_not_exists
-from easy_regression.cli.analysis_and_stat import job_analyze, job_merge,\
-    print_results
-from easy_regression.cli.checking import compute_check_results,\
-    display_check_results, fail_if_not_expected
+from easy_regression.cli.analysis_and_stat import job_analyze, job_merge, print_results
+from easy_regression.cli.checking import compute_check_results, display_check_results, fail_if_not_expected
 from easy_regression.cli.processing import process_one
 from easy_regression.conditions.interface import RTCheck
 from easy_regression.regression_test import RegressionTest

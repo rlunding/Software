@@ -59,3 +59,32 @@ A physical log is a physical .bag file. These are generated
     analyzer: Bag -> S
     reduce: S x S -> S
     display_test: S -> Display
+
+
+## Language
+
+
+Simple checks:
+
+    v:analyzer/log/statistics == value
+    v:analyzer/log/statistics >= value
+    v:analyzer/log/statistics <= value
+    v:analyzer/log/statistics < value
+    v:analyzer/log/statistics > value
+
+Check that it is in 10% of the value:
+
+    v:analyzer/log/statistics ==[10%] value
+
+Use `@date` to reference the test result at that date:
+
+    v:analyzer/log/statistics ==[10%] v:analyzer/log/statistic@date
+
+Use `~branch@date` to reference the value of a branch at a certain date:
+
+    v:analyzer/log/statistics ==[10%] v:analyzer/log/statistic~branch@date
+
+Use `?commit` to reference the value of a branch at a specific commit:
+
+    v:analyzer/log/statistics ==[10%] v:analyzer/log/statistic?e9aa5f4
+ 

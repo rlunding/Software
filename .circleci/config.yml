@@ -54,7 +54,7 @@ jobs:
             command: |
                 git lfs clone -b duckuments --depth 1 git@github.com:AndreaCensi/mcdp
                 cd mcdp && python setup.py develop
-                make test-documentation
+                cd $DUCKIETOWN_ROOT && make test-documentation
         - run:
             name: junit
             when: always
