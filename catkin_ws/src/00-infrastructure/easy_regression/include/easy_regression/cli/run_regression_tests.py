@@ -10,7 +10,8 @@ from duckietown_utils.system_cmd_imp import contract
 from easy_algo.algo_db import get_easy_algo_db
 from easy_logs.cli.require import get_log_if_not_exists
 from easy_regression.cli.analysis_and_stat import job_analyze, job_merge, print_results
-from easy_regression.cli.checking import compute_check_results, display_check_results, fail_if_not_expected
+from easy_regression.cli.checking import compute_check_results, display_check_results, fail_if_not_expected,\
+    write_to_db
 from easy_regression.cli.processing import process_one
 from easy_regression.conditions.interface import RTCheck
 from easy_regression.regression_test import RegressionTest
@@ -41,17 +42,17 @@ class RunRegressionTest(D8AppWithLogs, QuickApp):
         query = self.options.tests
         regression_tests = easy_algo_db.query('regression_test', query, raise_if_no_matches=True)
         
-        for r in regression_tests:
-            rt = easy_algo_db.create_instance('regression_test', r)
+        for rt_name in regression_tests:
+            rt = easy_algo_db.create_instance('regression_test', rt_name)
             
             easy_logs_db = self.get_easy_logs_db()
-            c = context.child(r)
+            c = context.child(rt_name)
             
-            outd = os.path.join(self.options.output, 'regression_tests', r)
-            jobs_rt(c, rt, easy_logs_db, outd, expect) 
+            outd = os.path.join(self.options.output, 'regression_tests', rt_name)
+            jobs_rt(c, rt_name, rt, easy_logs_db, outd, expect) 
 
 @contract(rt=RegressionTest)
-def jobs_rt(context, rt, easy_logs_db, out, expect):
+def jobs_rt(context, rt_name, rt, easy_logs_db, out, expect):
     
     logs = rt.get_logs(easy_logs_db)
     
@@ -87,6 +88,7 @@ def jobs_rt(context, rt, easy_logs_db, out, expect):
     context.comp(display_check_results, check_results, out)
     
     context.comp(fail_if_not_expected, check_results, expect)
+    context.comp(write_to_db, rt_name, results_all, out)
     
 def run_regression_test_main():
     wrap_script_entry_point(RunRegressionTest.get_sys_main())

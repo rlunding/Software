@@ -86,5 +86,7 @@ test-documentation:
 	--stylesheet v_manual_split \
 	--mathjax 0 \
 	-o out/test-documentation \
-	--output_file $(out_html).tmp -c "config echo 1; config colorize 0; rparmake"
+	--output_file $(out_html).tmp -c "config echo 1; config colorize 0; rparmake; why failed"
+	# compmake out/test-documentation -c "ls failed"
+	# compmake out/test-documentation -c "why failed"
 	rm -f catkin_ws/00_main_template.html

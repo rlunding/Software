@@ -7,6 +7,10 @@ from duckietown_utils.instantiate_utils import indent
 from duckietown_utils.system_cmd_imp import contract, system_cmd_result
 from easy_regression.conditions.interface import CheckResult, RTCheck
 from easy_regression.conditions.result_db import ResultDBEntry, ResultDB
+from easy_regression.cli.db_yaml import get_unique_filename, yaml_from_rdbe
+import os
+from duckietown_utils.file_utils import write_data_to_file
+from duckietown_utils.dates import format_datetime_as_YYYY_MM_DD
 
 
 def git_cmd(cmd):
@@ -21,18 +25,18 @@ def git_cmd(cmd):
 def make_entry(results_all):
     user = getpass.getuser()
     hostname = socket.gethostname()
-    date = datetime.now()
+    date = format_datetime_as_YYYY_MM_DD(datetime.now())
     import platform
     cpu = platform.processor()
     branch = git_cmd('git rev-parse --abbrev-ref HEAD')
     commit = git_cmd('git rev-parse --verify HEAD')
     current = ResultDBEntry(date=date,
-                           host=hostname,
-                           cpu=cpu,
-                           user=user,
-                           results=results_all,
-                           branch=branch,
-                           commit=commit)
+                            host=hostname,
+                            cpu=cpu,
+                            user=user,
+                            results=results_all,
+                            branch=branch,
+                            commit=commit)
     return current 
 
 def compute_check_results(rt, results_all):
@@ -51,8 +55,16 @@ def display_check_results(results, out):
     s = ""
     for i, r in enumerate(results):
         s += '\n' + indent(str(r), '', '%d of %d: ' % (i+1, len(results)))
-    
     print(s)
+    
+def write_to_db(rt_name, results_all, out):
+    rdbe = make_entry(results_all)
+    fn = get_unique_filename(rt_name, rdbe)
+    s = yaml_from_rdbe(rdbe)
+    print s
+    filename = os.path.join(out, fn)
+    write_data_to_file(s, filename)
+    
     
 @contract(results='list($CheckResult)')
 def fail_if_not_expected(results, expect):
