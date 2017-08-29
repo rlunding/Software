@@ -13,12 +13,12 @@ def test_color_sizes():
     
     s2 = colored(s1, 'magenta')
      
-    print(s1.__repr__())
-    print(s2.__repr__())
+#     print(s1.__repr__())
+#     print(s2.__repr__())
     
     l1 = get_length_on_screen(s1)
     l2 = get_length_on_screen(s2)
-    print l1, l2
+#     print l1, l2
     assert l1 == l2
     
     
