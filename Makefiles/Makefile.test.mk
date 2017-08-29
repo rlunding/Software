@@ -21,10 +21,10 @@ test-circle: \
 	test-download-logs \
 	test-line-detector-programmatic
 
-	#
-	# test-catkin_tests \
-	# test-anti_instagram
-	#
+#
+# test-catkin_tests \
+# test-anti_instagram
+#
 
 test-all: \
 	test-comptests \

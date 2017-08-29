@@ -3,6 +3,10 @@ jobs:
     build:
      docker:
         - image: andreacensi/duckietown-xenial-kinetic:17
+          environment:
+              DUCKIEFLEET_ROOT: duckiefleet
+              DUCKIETOWN_ROOT: duckietown-root-to-set
+              DUCKIETOWN_DATA: duckietown-data
      parallelism: 1
      steps:
         - checkout
@@ -20,8 +24,11 @@ jobs:
         - run:
             name: build
             command: |
-                # echo PWD = $PWD
+                echo PWD = $PWD
                 source /opt/ros/kinetic/setup.bash
+
+                mkdir -p $DUCKIETOWN_DATA
+                mkdir -p $DUCKIEFLEET_ROOT
                 make build-catkin-parallel-max
 
         - run:
@@ -32,9 +39,7 @@ jobs:
 
                 export DUCKIETOWN_ROOT=$PWD
                 export HOSTNAME=$HOSTNAME
-                export DUCKIEFLEET_ROOT=duckiefleet
-                export DUCKIETOWN_DATA=duckietown-data
-                mkdir -p $DUCKIETOWN_DATA
+
 
                 git clone git@github.com:duckietown/duckiefleet-fall2017.git $DUCKIEFLEET_ROOT
 
