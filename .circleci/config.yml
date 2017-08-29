@@ -41,7 +41,12 @@ jobs:
                 make test-download-logs
                 make test-circle
 
-
+        - run:
+            name: MCDP
+            command: |
+                git lfs clone -b duckuments --depth 1 git@github.com:AndreaCensi/mcdp
+                cd mcdp && python setup.py develop
+                
         - run:
             name: junit
             when: always
