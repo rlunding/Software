@@ -80,7 +80,7 @@ test-line-detector-programmatic: test-download-logs
 	rosrun line_detector2 programmatic --logs $(onelog) --algos all --reset -c parmake
 
 test-documentation:
-	touch catkin_ws/00_main_template.html
+	echo "<html><head></head><body></body></html>" > catkin_ws/00_main_template.html
 	DISABLE_CONTRACTS=1 mcdp-render-manual \
 	--src $(catkin_ws) \
 	--stylesheet v_manual_split \

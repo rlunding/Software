@@ -67,10 +67,10 @@ A physical log is a physical .bag file. These are generated
 Simple checks:
 
     v:analyzer/log/statistics == value
-    v:analyzer/log/statistics >= value
-    v:analyzer/log/statistics <= value
-    v:analyzer/log/statistics < value
-    v:analyzer/log/statistics > value
+    v:analyzer/log/statistics &gt;= value
+    v:analyzer/log/statistics &lt;= value
+    v:analyzer/log/statistics &lt; value
+    v:analyzer/log/statistics &gt; value
 
 Check that it is in 10% of the value:
 
@@ -87,4 +87,3 @@ Use `~branch@date` to reference the value of a branch at a certain date:
 Use `?commit` to reference the value of a branch at a specific commit:
 
     v:analyzer/log/statistics ==[10%] v:analyzer/log/statistic?e9aa5f4
- 
