@@ -16,9 +16,14 @@ def process_one(bag_filename, processors, log_out):
     
     d8n_make_sure_dir_exists(log_out)
     
+    tmpdir = create_tmpdir()
+    tmpfiles = []
+    
     def get_tmp_bag():
-        d = create_tmpdir()
-        return os.path.join(d, 'tmp.bag')
+        i = len(tmpfiles)
+        f = os.path.join(tmpdir, 'tmp%d.bag'%i)
+        tmpfiles.append(f)
+        return f
         
     easy_algo_db = get_easy_algo_db()
     # instantiate processors
@@ -30,7 +35,7 @@ def process_one(bag_filename, processors, log_out):
     try:
         for p in processors_instances:
             next_bag_filename = get_tmp_bag() 
-            tmpfiles.append(next_bag_filename)
+            
             in_bag = rosbag.Bag(bag_filename)
             
             out_bag = rosbag.Bag(next_bag_filename, 'w')
@@ -42,21 +47,24 @@ def process_one(bag_filename, processors, log_out):
             in_bag.close()
             out_bag.close()
             
-            os.rename(next_bag_filename, bag_filename)
-    except:
-        raise
-    
-    logger.info('Creating output file %s' % log_out)
-    if not processors:
-        # just create symlink
-        logger.info('(Just creating symlink, because there '
-                    'was no processing done.)')
-        os.symlink(os.path.realpath(bag_filename), log_out)
-    else:
-        shutil.copy(bag_filename, log_out)
-    logger.info('I created %s' % log_out)
-    # TODO: delete temp file
-    for t in tmpfiles:
-        logger.info(' deleting %s' % t)
-    
+            bag_filename = next_bag_filename
+            
+        #shutil.rmtree(tmpdir)
+        
+            
+        logger.info('Creating output file %s' % log_out)
+        if not processors:
+            # just create symlink
+            logger.info('(Just creating symlink, because there '
+                        'was no processing done.)')
+            os.symlink(os.path.realpath(bag_filename), log_out)
+        else:
+            shutil.copy(bag_filename, log_out)
+        logger.info('I created %s' % log_out)
+            
+
+    finally:
+        for f in tmpfiles:
+            logger.info(' deleting %s' % f)
+            os.unlink(f)
     return log_out

@@ -32,7 +32,8 @@ def d8n_make_video_from_bag(bag_filename, topic, out):
     
     # pg -m procgraph_ros bag2mp4 --bag $bag --topic $topic --out $out
       
-    model = 'bag2mp4_fixfps'
+#     model = 'bag2mp4_fixfps'
+    model = 'bag2mp4'
     out_tmp = os.path.join(tmpdir, os.path.basename(out))
     logger.debug('Writing temp file to %s' % out_tmp)
     logger.debug('(You can use mplayer to follow along.)')

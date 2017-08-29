@@ -1,6 +1,7 @@
 
 from collections import OrderedDict
 import os
+import re
 
 import cv2
 
@@ -16,6 +17,7 @@ from duckietown_utils.system_cmd_imp import contract
 from easy_algo.algo_db import get_easy_algo_db
 from easy_logs.cli.easy_logs_summary_imp import format_logs
 from easy_logs.logs_db import get_easy_logs_db
+from easy_regression.processor_interface import ProcessorInterface
 from line_detector.line_detector_interface import FAMILY_LINE_DETECTOR, LineDetectorInterface
 from line_detector.visual_state import visual_state_from_image
 from line_detector.visual_state_fancy_display import vs_fancy_display
@@ -98,6 +100,7 @@ def job(log_name, algo_name, out_bag):
 @contract(topic=str, line_detector=LineDetectorInterface)
 def run_from_bag(log, topic, line_detector, out_bag_filename):
     H, W = 200, 320
+    
     with d8n_write_to_bag_context(out_bag_filename) as out_bag:
         for image_msg in d8n_bag_read_with_progress(log, topic):
             # Get he CV image from a jpg
@@ -115,6 +118,18 @@ def run_from_bag(log, topic, line_detector, out_bag_filename):
             out_bag.write('processed', out)
             out = d8n_image_msg_from_cv_image(image_cv, "bgr8", same_timestamp_as=image_msg)
 
+def which_robot(bag):
+    pattern  = r'/(\w+)/camera_node/image/compressed'
+    
+    topics = list(bag.get_type_and_topic_info()[1].keys())
+
+    for topic in topics:
+        m = re.match(pattern, topic)
+        if m:
+            vehicle = m.group(1)
+            return vehicle
+    msg = 'Could not find a topic matching %s' % pattern
+    raise ValueError(msg)
 
 def get_only_valid_logs_with_camera(logs):
     good_logs = OrderedDict()
@@ -126,6 +141,37 @@ def get_only_valid_logs_with_camera(logs):
         good_logs[k] = log
     return good_logs
            
-   
+
+class LineDetectorProcessor(ProcessorInterface):
+    
+    @contract(shape='seq[2](int)', line_detector='str')
+    def __init__(self, shape, line_detector):
+        self.shape = shape
+        self.line_detector = line_detector
+        
+    def process_log(self, bag_in, bag_out):
+        algo_db = get_easy_algo_db()
+        line_detector = algo_db.create_instance(FAMILY_LINE_DETECTOR, self.line_detector)
+        
+        vehicle = which_robot(bag_in)
+        topic = '/%s/camera_node/image/compressed' % vehicle
+        H, W = self.shape
+        for image_msg in d8n_bag_read_with_progress(bag_in, topic):
+            
+            image_cv = image_cv_from_jpg(image_msg.data)    
+            image_cv = cv2.resize(image_cv, (W, H), interpolation=cv2.INTER_NEAREST)
+            
+            vs = visual_state_from_image(image_cv, line_detector)
+            
+            rendered = vs_fancy_display(vs)
+            rendered = d8_image_zoom_linear(rendered, 2)
+            out = d8n_image_msg_from_cv_image(rendered, "bgr8", same_timestamp_as=image_msg)
+            
+            # Write to the bag
+            bag_out.write('processed', out)
+            out = d8n_image_msg_from_cv_image(image_cv, "bgr8", same_timestamp_as=image_msg)
+            
+            bag_out.write('image', image_msg)
+    
 programmatic_line_detection_tests = RunLineDetectionTests.get_sys_main()
 

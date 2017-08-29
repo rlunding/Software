@@ -4,10 +4,10 @@ from duckietown_utils import logger
 from duckietown_utils.exceptions import DTBadData
 
 
-def d8n_bag_read_with_progress(log, topic):
-    import rosbag  # @UnresolvedImport
-    bag = rosbag.Bag(log.filename)
-    length = log.length
+def d8n_bag_read_with_progress(bag, topic):
+    bag_t0 = bag.get_start_time()
+    bag_t1 = bag.get_end_time()
+    length = bag_t1 - bag_t0  
     n = 0
     msg_time0 = None
     # write a message every once in a while 

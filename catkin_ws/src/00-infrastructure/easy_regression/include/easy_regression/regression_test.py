@@ -12,10 +12,11 @@ ChecksWithComment = namedtuple('ChecksWithComment', ['checks', 'comment'])
 
 class RegressionTest():
     
-    def __init__(self, logs, processors, analyzers, checks):
+    def __init__(self, logs, processors=[], analyzers=[], checks=[], topic_videos=[]):
         self.logs = logs
         self.processors = processors
         self.analyzers = analyzers
+        self.topic_videos = topic_videos
         
         check_isinstance(checks, list)
        
@@ -39,6 +40,9 @@ class RegressionTest():
         for s in self.logs:
             logs.update(algo_db.query(s))
         return logs
+    
+    def get_topic_videos(self):
+        return self.topic_videos
     
     def get_checks(self):
         return self.cwcs
