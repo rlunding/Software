@@ -29,17 +29,9 @@ def parse_binary(s):
         Raise RTParseError on error.
     """
     
-    simple = {
-        '>': gt,
-        '>=': gte,
-        '<=': lte, 
-        '<': lt,
-        '==': eq,
-        '!=': neq, 
-        'contains': contains,
-    }
-    if s in simple:
-        return simple[s]
+    
+    if s in Cmp.known:
+        return Cmp(s)
     
     try:
         inside = remove_prefix_suffix(s, '==[', ']')
@@ -62,50 +54,57 @@ def parse_binary(s):
     raise RTParseError(msg)
 
 
-def float_op(f):
-    class X():
-        def __call__(self, a, b):
-            try:
-                expect_float(a)
-                expect_float(b)
-                val =  f(a, b)
-                desc = '%s %s %s' % (a, f.__name__, b)
-                return ResultWithDescription(val, desc)
-            except EvaluationError as e:
-                msg = 'While evaluating %s(%s, %s)' % (f.__name__, a, b)
-                raise_wrapped(EvaluationError, e, msg, compact=True)
-        def __repr__(self):
-            return f.__name__
-    X.__name__ = f.__name__
-    return X()
-
-def contains(a, b):
-    return b in a
-
-@float_op
+ 
 def gt(a, b):
     return a > b
-
-@float_op
+ 
 def lt(a, b):
     return a < b
-    
-@float_op
-def lte(a, b):
+     
+def leq(a, b):
     return a <= b
-
-@float_op
-def gte(a, b):
+ 
+def geq(a, b):
     return a >= b
-
-@float_op
+ 
 def eq(a, b):
     return a == b
-
-@float_op
+ 
 def neq(a, b):
     return a != b
 
+
+class Cmp():
+    known = {
+        '>': gt,
+        '>=': geq,
+        '<=': leq, 
+        '<': lt,
+        '==': eq,
+        '!=': neq, 
+    }
+    def __init__(self, which):
+        assert which in Cmp.known
+        self.which = which
+        self.f = Cmp.known[which]
+        
+    def __call__(self, a, b):
+        try:
+            expect_float(a)
+            expect_float(b)
+            val =  self.f(a, b)
+            desc = '%s %s %s' % (a, self.which, b)
+            return ResultWithDescription(val, desc)
+        except EvaluationError as e:
+            msg = 'While evaluating %s(%s, %s)' % (self.f.__name__, a, b)
+            raise_wrapped(EvaluationError, e, msg, compact=True)
+    
+    def __repr__(self):
+        return self.which
+
+# 
+# def contains(a, b):
+#     return b in a
 def expect_float(x):
     if not isinstance(x, (float,int)):
         msg = 'Expected a number, got %s.' % x.__repr__() 

@@ -15,25 +15,24 @@ CheckResult0 = namedtuple('CheckResult0',
                               'summary', # A short string
                               'details', # A long description
                               ])
-
+class CheckResult(CheckResult0):
+    def __str__(self):
+        s = 'CheckResult:'
+        s += '\n' + indent(self.status, '   status: ')
+        s += '\n' + indent(self.summary, '  summary: ')
+        s += '\n' + indent(self.details, '', '  details: ')
+        return s
 
 class RTCheck():
     __metaclass__ = ABCMeta
     
-    FAIL = 'failed'
+    FAIL = 'fail'
     OK = 'ok'
-    WARN = 'caution'
-    NODATA = 'missing' # the historical data is not there yet
+    NODATA = 'nodata' # the historical data is not there yet
     ABNORMAL = 'abnormal' # Other error in the evaluation
     
-    CHECK_RESULTS = [OK, WARN, FAIL, NODATA, ABNORMAL]
-    class CheckResult(CheckResult0):
-        def __str__(self):
-            s = 'CheckResult:'
-            s += '\n' + indent(self.status, '   status: ')
-            s += '\n' + indent(self.summary, '  summary: ')
-            s += '\n' + indent(self.details, '', '  details: ')
-            return s
+    CHECK_RESULTS = [OK, FAIL, NODATA, ABNORMAL]
+    
     
     @abstractmethod
     @contract(returns=CheckResult, result_db=ResultDB)

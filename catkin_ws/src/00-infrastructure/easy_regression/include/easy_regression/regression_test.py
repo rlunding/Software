@@ -8,7 +8,7 @@ from duckietown_utils.yaml_pretty import yaml_dump_pretty
 from duckietown_utils.exception_utils import raise_wrapped
 import copy
 
-ChecksWithComment = namedtuple('CheckWithComment', ['checks', 'comment'])
+ChecksWithComment = namedtuple('ChecksWithComment', ['checks', 'comment'])
 
 class RegressionTest():
     
@@ -39,6 +39,9 @@ class RegressionTest():
         for s in self.logs:
             logs.update(algo_db.query(s))
         return logs
+    
+    def get_checks(self):
+        return self.cwcs
     
 def parse_list_of_checks(checks):
     checks = copy.deepcopy(checks)

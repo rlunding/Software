@@ -5,27 +5,40 @@ from quickapp import QuickApp
 
 from duckietown_utils import logger
 from duckietown_utils.cli import D8AppWithLogs
-from duckietown_utils.exceptions import wrap_script_entry_point
+from duckietown_utils.exceptions import wrap_script_entry_point, DTUserError
 from duckietown_utils.system_cmd_imp import contract
 from easy_algo.algo_db import get_easy_algo_db
+from easy_logs.cli.require import get_log_if_not_exists
 from easy_regression.cli.analysis_and_stat import job_analyze, job_merge,\
     print_results
+from easy_regression.cli.checking import compute_check_results,\
+    display_check_results, fail_if_not_expected
 from easy_regression.cli.processing import process_one
+from easy_regression.conditions.interface import RTCheck
 from easy_regression.regression_test import RegressionTest
-from easy_logs.cli.require import get_log_if_not_exists
 
 
-ALL_LOGS = 'all logs'
+ALL_LOGS = 'all'
 
 class RunRegressionTest(D8AppWithLogs, QuickApp): 
     """ Run regression tests. """
 
     def define_options(self, params):
         g = 'Running regressions tests'
-        params.add_string('tests', help="Query for tests instances.", group=g)  
+        params.add_string('tests', help="Query for tests instances.", group=g)
+        
+        h = 'Expected status code for this regression test; one of: %s' % ", ".join(RTCheck.CHECK_RESULTS)
+        default = RTCheck.OK
+        params.add_string('expect', help=h, group=g, default=default)  
         
     def define_jobs_context(self, context):
         easy_algo_db = get_easy_algo_db()
+        
+        expect = self.options.expect
+        
+        if not expect in RTCheck.CHECK_RESULTS:
+            msg = 'Invalid expect status %s; must be one of %s.' % (expect, RTCheck.CHECK_RESULTS)
+            raise DTUserError(msg)
         
         query = self.options.tests
         regression_tests = easy_algo_db.query('regression_test', query, raise_if_no_matches=True)
@@ -37,10 +50,10 @@ class RunRegressionTest(D8AppWithLogs, QuickApp):
             c = context.child(r)
             
             outd = os.path.join(self.options.output, 'regression_tests', r)
-            jobs_rt(c, rt, easy_logs_db, outd) 
+            jobs_rt(c, rt, easy_logs_db, outd, expect) 
 
 @contract(rt=RegressionTest)
-def jobs_rt(context, rt, easy_logs_db, out):
+def jobs_rt(context, rt, easy_logs_db, out, expect):
     
     logs = rt.get_logs(easy_logs_db)
     
@@ -72,6 +85,10 @@ def jobs_rt(context, rt, easy_logs_db, out):
     
     context.comp(print_results, analyzers, results_all, out)
 
+    check_results = context.comp(compute_check_results, rt, results_all)
+    context.comp(display_check_results, check_results, out)
+    
+    context.comp(fail_if_not_expected, check_results, expect)
     
 def run_regression_test_main():
     wrap_script_entry_point(RunRegressionTest.get_sys_main())

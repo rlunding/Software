@@ -1,5 +1,5 @@
 description: |
-    A simple regression test.
+    A regression test that fails because there is no data available.
 
 constructor: easy_regression.RegressionTest
 parameters:
@@ -12,11 +12,4 @@ parameters:
     checks:
     - desc: The number of messages read should remain the same.
       cond: |
-        count_messages/20160223-amadoa-amadobot-RCDP2/num_messages == 5330
-        count_messages/all/num_messages == 5330
-
-
-# accept:
-#   count_messages:
-#     20160223-amadoa-amadobot-RCDP2:
-#       num_messages:  "== 5330"
+        v:count_messages/all/num_messages@2016-12-12 == 5330

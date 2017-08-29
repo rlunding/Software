@@ -51,6 +51,10 @@ def parse_reference(s):
     
     try:
         c = yaml.load(s)
+        if isinstance(c, str) and '/' in c:
+            msg = 'The syntax is "v:analyzer/log/statistic"'
+            msg += '\nInvalid string: %r' % c
+            raise RTParseError(msg)
         return Constant(c)
     except yaml.YAMLError:
         msg = 'Could not parse reference %s.' % s.__repr__()

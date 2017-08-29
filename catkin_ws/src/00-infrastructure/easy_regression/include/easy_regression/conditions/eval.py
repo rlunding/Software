@@ -7,6 +7,7 @@ from duckietown_utils.system_cmd_imp import contract
 
 from .interface import RTCheck
 from .result_db import ResultDB, AmbiguousQuery
+from easy_regression.conditions.interface import CheckResult
 
 
 class EvaluationError(Exception):
@@ -55,51 +56,38 @@ class Wrapper(RTCheck):
             res = self.evaluable.eval(rdb)
             if not isinstance(res, ResultWithDescription):
                 msg = 'Expected ResultWithDescription, obtained %s' % res.__repr__()
-                return RTCheck.CheckResult(
+                return CheckResult(
                    status=RTCheck.ABNORMAL,
                    summary='Invalid test',
                    details=msg) 
             if res.__bool__() == True:
-                return RTCheck.CheckResult(
+                return CheckResult(
                    status=RTCheck.OK,
                    summary='OK',
                    details=res.desc)
             if res.__bool__() == False:
-                return RTCheck.CheckResult(
+                return CheckResult(
                    status=RTCheck.FAIL,
                    summary='Failed',
                    details=res.desc)
         except AmbiguousQuery as e:
-            return RTCheck.CheckResult(
+            return CheckResult(
                status=RTCheck.FAIL,
                summary='Ambiguous query',
                details=str(e))
         except DataNotFound as e:
-            return RTCheck.CheckResult(
+            return CheckResult(
                status=RTCheck.NODATA,
                summary='No data available',
                details=str(e))
         except EvaluationError as e:
-            return RTCheck.CheckResult(
+            return CheckResult(
                status=RTCheck.ABNORMAL,
                summary='Invalid test',
                details=str(e))
         
     
-#      
-#     FAIL = 'failed'
-#     OK = 'ok'
-#     WARN = 'caution'
-#     NODATA = 'missing' # the historical data is not there yet
-#     ABNORMAL = 'abnormal' # Other error in the evaluation
-#     
-#     CHECK_RESULTS = [OK, WARN, FAIL, NODATA, ABNORMAL]
-#     
-#     CheckResult = namedtuple('CheckResult',
-#                              ['status', # One of the above in CHECK_RESULTS 
-#                               'summary', # A short string
-#                               'details', # A long description
-#                               ])
+
 class BinaryEval(Evaluable):
     
     @contract(a=Evaluable, b=Evaluable)
