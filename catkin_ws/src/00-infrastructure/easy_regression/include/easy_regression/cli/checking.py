@@ -1,17 +1,38 @@
+from datetime import datetime
+import getpass
+import socket
+
+from duckietown_utils.constants import get_duckietown_root
 from duckietown_utils.instantiate_utils import indent
-from duckietown_utils.system_cmd_imp import contract
+from duckietown_utils.system_cmd_imp import contract, system_cmd_result
 from easy_regression.conditions.interface import CheckResult, RTCheck
 from easy_regression.conditions.result_db import ResultDBEntry, ResultDB
 
 
+def git_cmd(cmd):
+    cwd = get_duckietown_root()
+    res = system_cmd_result(cwd, cmd,
+              display_stdout=False,
+              display_stderr=False,
+              raise_on_error=True)
+    return res.stdout.strip()
+    
+
 def make_entry(results_all):
-    current = ResultDBEntry(date='',
-                           host='',
-                           cpu='',
-                           user='',
+    user = getpass.getuser()
+    hostname = socket.gethostname()
+    date = datetime.now()
+    import platform
+    cpu = platform.processor()
+    branch = git_cmd('git rev-parse --abbrev-ref HEAD')
+    commit = git_cmd('git rev-parse --verify HEAD')
+    current = ResultDBEntry(date=date,
+                           host=hostname,
+                           cpu=cpu,
+                           user=user,
                            results=results_all,
-                           branch='',
-                           commit='')
+                           branch=branch,
+                           commit=commit)
     return current 
 
 def compute_check_results(rt, results_all):

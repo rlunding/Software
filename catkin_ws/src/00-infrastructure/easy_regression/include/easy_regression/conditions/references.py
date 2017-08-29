@@ -1,3 +1,4 @@
+from contracts.utils import check_isinstance
 import yaml
 
 from duckietown_utils.exception_utils import raise_wrapped, check_is_in
@@ -6,7 +7,6 @@ from duckietown_utils.text_utils import remove_prefix, string_split
 from easy_regression.conditions.eval import Evaluable, EvaluationError
 from easy_regression.conditions.interface import RTParseError
 from easy_regression.conditions.result_db import ResultDBEntry
-from contracts.utils import check_isinstance
 
 
 def parse_reference(s):

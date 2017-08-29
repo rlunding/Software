@@ -2,9 +2,9 @@ from abc import abstractmethod, ABCMeta
 from collections import namedtuple
 
 from duckietown_utils.exceptions import DTConfigException
+from duckietown_utils.instantiate_utils import indent
 from duckietown_utils.system_cmd_imp import contract
 from easy_regression.conditions.result_db import ResultDB
-from duckietown_utils.instantiate_utils import indent
 
 
 class RTParseError(DTConfigException):
