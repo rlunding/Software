@@ -18,8 +18,8 @@ parameters:
     checks:
     - desc: The number of messages read should remain the same.
       cond: |
-        count_messages/20160223-amadoa-amadobot-RCDP2/num_messages == 5330
-        count_messages/all/num_messages == 5330
+        v:count_messages/20160223-amadoa-amadobot-RCDP2/num_messages == 5330
+        v:count_messages/all/num_messages == 5330
 """
 
 
@@ -38,8 +38,8 @@ parameters:
     checks:
     - desc: The number of messages read should remain the same.
       cond: |
-        count_messages/20160223-amadoa-amadobot-RCDP2/num_messages == 5330
-        count_messages/all/num_messages = 5330
+        v:count_messages/20160223-amadoa-amadobot-RCDP2/num_messages == 5330
+        v:count_messages/all/num_messages = 5330
 """
 
 @comptest
