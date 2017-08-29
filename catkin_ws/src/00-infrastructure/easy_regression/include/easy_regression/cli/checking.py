@@ -11,6 +11,7 @@ from easy_regression.cli.db_yaml import get_unique_filename, yaml_from_rdbe
 import os
 from duckietown_utils.file_utils import write_data_to_file
 from duckietown_utils.dates import format_datetime_as_YYYY_MM_DD
+from easy_algo.algo_db import get_easy_algo_db
 
 
 def git_cmd(cmd):
@@ -41,7 +42,16 @@ def make_entry(results_all):
 
 def compute_check_results(rt, results_all):
     current = make_entry(results_all)
-    rdb = ResultDB(current=current, entries=[])
+    
+    algo_db = get_easy_algo_db()
+    entries_names = algo_db.query('rdbe', 'all')
+    print('entries: %s' % list(entries_names))
+    entries = []
+    for name in entries_names:
+        e = algo_db.create_instance('rdbe', name)
+        entries.append(e)
+    
+    rdb = ResultDB(current=current, entries=entries)
     
     res = []
     for cwc in rt.get_checks():

@@ -1,7 +1,6 @@
 import os
 from types import NoneType
 
-from duckietown_utils import logger
 from duckietown_utils.caching import get_cached
 from duckietown_utils.exception_utils import check_is_in
 from duckietown_utils.exceptions import DTConfigException
