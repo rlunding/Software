@@ -9,6 +9,7 @@ def parse_condition_check_good():
     good = [
         'v:analyzer/test/statistic >= 12', 
         'v:analyzer/test/statistic@2016-12-01 <= 2',
+        
     ]
     for g in good:
         _parse_regression_test_check(g)

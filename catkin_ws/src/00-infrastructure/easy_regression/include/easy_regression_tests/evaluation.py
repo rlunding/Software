@@ -15,7 +15,8 @@ def get_test_db():
         'same': 10,
         }
     }} 
-    current = ResultDBEntry(date='',
+    current = ResultDBEntry(regression_test_name='',
+                            date='',
                            host='',
                            cpu='',
                            user='',
@@ -30,7 +31,8 @@ def get_test_db():
         'changed': 100,
         }
     }} 
-    old = ResultDBEntry(date=parse_date_spec('2017-01-01'),
+    old = ResultDBEntry(regression_test_name='',
+                        date=parse_date_spec('2017-01-01'),
                        host='',
                        cpu='',
                        user='',

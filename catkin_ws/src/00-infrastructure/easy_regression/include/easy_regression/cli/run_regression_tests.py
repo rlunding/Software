@@ -1,3 +1,4 @@
+
 from collections import OrderedDict
 import os
 
@@ -15,8 +16,6 @@ from easy_regression.cli.checking import compute_check_results, display_check_re
 from easy_regression.cli.processing import process_one
 from easy_regression.conditions.interface import RTCheck
 from easy_regression.regression_test import RegressionTest
-
-
 ALL_LOGS = 'all'
 
 class RunRegressionTest(D8AppWithLogs, QuickApp): 
@@ -84,7 +83,7 @@ def jobs_rt(context, rt_name, rt, easy_logs_db, out, expect):
     
     context.comp(print_results, analyzers, results_all, out)
 
-    check_results = context.comp(compute_check_results, rt, results_all)
+    check_results = context.comp(compute_check_results, rt_name, rt, results_all)
     context.comp(display_check_results, check_results, out)
     
     context.comp(fail_if_not_expected, check_results, expect)

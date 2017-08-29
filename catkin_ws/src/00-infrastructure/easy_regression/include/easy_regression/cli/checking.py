@@ -23,7 +23,7 @@ def git_cmd(cmd):
     return res.stdout.strip()
     
 
-def make_entry(results_all):
+def make_entry(rt_name, results_all):
     user = getpass.getuser()
     hostname = socket.gethostname()
     date = format_datetime_as_YYYY_MM_DD(datetime.now())
@@ -31,7 +31,8 @@ def make_entry(results_all):
     cpu = platform.processor()
     branch = git_cmd('git rev-parse --abbrev-ref HEAD')
     commit = git_cmd('git rev-parse --verify HEAD')
-    current = ResultDBEntry(date=date,
+    current = ResultDBEntry(regression_test_name=rt_name, 
+                            date=date,
                             host=hostname,
                             cpu=cpu,
                             user=user,
@@ -40,11 +41,11 @@ def make_entry(results_all):
                             commit=commit)
     return current 
 
-def compute_check_results(rt, results_all):
-    current = make_entry(results_all)
+def compute_check_results(rt_name, rt, results_all):
+    current = make_entry(rt_name, results_all)
     
     algo_db = get_easy_algo_db()
-    entries_names = algo_db.query('rdbe', 'all')
+    entries_names = algo_db.query('rdbe', 'parameters:regression_test_name:%s'%rt_name)
     print('entries: %s' % list(entries_names))
     entries = []
     for name in entries_names:
@@ -68,7 +69,7 @@ def display_check_results(results, out):
     print(s)
     
 def write_to_db(rt_name, results_all, out):
-    rdbe = make_entry(results_all)
+    rdbe = make_entry(rt_name, results_all)
     fn = get_unique_filename(rt_name, rdbe)
     s = yaml_from_rdbe(rdbe)
     print s

@@ -19,23 +19,48 @@ def parse_reference(s):
     if s.startswith(prefix):
         s = remove_prefix(s, prefix)
         
-        if '@' in s:
-            s, date_spec = string_split(s, '@')
-            if not date_spec:
-                msg = 'Invalid date spec %r.' % date_spec 
-                raise RTParseError(msg)
-            date = parse_date_spec(date_spec)
-        else:
-            date = None
+        T_DATE = '@'
+        T_BRANCH = '~'
+        T_COMMIT = '?'
+        TS = [T_DATE, T_BRANCH, T_COMMIT]
+        
+        if (T_COMMIT in s)  and (T_DATE in s):
+            msg = 'Cannot specify commit and date: %s' % s
+            raise RTParseError(msg)
+        
+        date = None
+        commit = None
+        branch_spec = None
+        
+        def get_last_one(s0):
+            for c in s0[::-1]:
+                if c in TS:
+                    return c
+                
+        while True:
+            which = get_last_one(s)
             
-        if '~' in s:
-            s, branch_spec = string_split(s, '~')
-            if not branch_spec:
-                msg = 'Invalid branch spec %r.' % branch_spec 
-                raise RTParseError(msg)
-        else:
-            branch_spec = None
+            if which is None:
+                break
+            elif which == T_DATE:
+                s, date_spec = string_split(s, T_DATE)
+                if not date_spec:
+                    msg = 'Invalid date spec %r.' % date_spec 
+                    raise RTParseError(msg)
+                date = parse_date_spec(date_spec)
+            elif which == T_BRANCH:
+                s, branch_spec = string_split(s, T_BRANCH)
+                if not branch_spec:
+                    msg = 'Invalid branch spec %r.' % branch_spec 
+                    raise RTParseError(msg)
+            elif which == T_COMMIT:
+                s, commit = string_split(s, T_COMMIT)
+                if not commit:
+                    msg = 'Invalid commit %r.' % branch_spec 
+                    raise RTParseError(msg)
+        
             
+              
         tokens = s.split('/')
         if not len(tokens) >= 3:
             msg = 'Expected "analyzer/log/statistic"'
@@ -44,7 +69,7 @@ def parse_reference(s):
         analyzer = tokens[0]
         log = tokens[1]
         statistic = tuple(tokens[2:]) 
-        commit = None
+        
             
         return StatisticReference(analyzer=analyzer, log=log, statistic=statistic, 
                                   branch=branch_spec, date=date, commit=commit)

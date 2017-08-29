@@ -7,7 +7,8 @@ from duckietown_utils.system_cmd_imp import contract
 
 
 ResultDBEntry0 = namedtuple('ResultDBEntry0',
-                           ['date',
+                           ['regression_test_name',
+                            'date',
                             'host',
                             'cpu',
                             'user',
@@ -17,6 +18,7 @@ ResultDBEntry0 = namedtuple('ResultDBEntry0',
 class ResultDBEntry(ResultDBEntry0):
     def __str__(self):
         s = 'ResultDBEntry'
+        s += '\n regression_test_name: ' +  self.regression_test_name
         s += '\n   date: ' + self.date.__repr__()
         s += '\n   host: ' + self.host.__repr__()
         s += '\n    cpu: ' + self.cpu.__repr__()
@@ -48,8 +50,8 @@ class ResultDB():
         
         possible = []
         for e in self.entries:
-            ok1 = (branch is None) or (branch == e.date)
-            ok2 = (commit is None) or (commit == e.date)
+            ok1 = (branch is None) or (branch == e.branch)
+            ok2 = (commit is None) or (e.commit is not None and e.commit.endswith(commit))
             ok3 = (date is None) or (date == e.date)
             ok = ok1 and ok2 and ok3
             if ok:
