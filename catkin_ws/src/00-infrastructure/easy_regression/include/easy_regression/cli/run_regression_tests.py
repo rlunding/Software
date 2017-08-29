@@ -72,9 +72,6 @@ def jobs_rt(context, rt, easy_logs_db, out):
     
     context.comp(print_results, analyzers, results_all, out)
 
-
-    
-
     
 def run_regression_test_main():
     wrap_script_entry_point(RunRegressionTest.get_sys_main())

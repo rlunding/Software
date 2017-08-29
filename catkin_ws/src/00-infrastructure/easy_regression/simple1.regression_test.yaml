@@ -4,9 +4,19 @@ description: |
 constructor: easy_regression.RegressionTest
 parameters:
     logs:
-    # - "vehicle:ferrari,length:<50"
-    #- 20160411-226-lane_filter-y_0_theta_-0.45-setlist
     - 20160223-amadoa-amadobot-RCDP2
     processors: []
     analyzers:
     - count_messages
+
+    checks:
+    - desc: The number of messages read should remain the same.
+      cond: |
+        count_messages/20160223-amadoa-amadobot-RCDP2/num_messages == 5330
+        count_messages/all/num_messages == 5330
+
+
+# accept:
+#   count_messages:
+#     20160223-amadoa-amadobot-RCDP2:
+#       num_messages:  "== 5330"
