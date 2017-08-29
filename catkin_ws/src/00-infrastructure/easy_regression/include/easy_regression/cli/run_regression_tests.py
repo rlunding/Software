@@ -16,6 +16,8 @@ from easy_regression.cli.checking import compute_check_results, display_check_re
 from easy_regression.cli.processing import process_one
 from easy_regression.conditions.interface import RTCheck
 from easy_regression.regression_test import RegressionTest
+
+
 ALL_LOGS = 'all'
 
 class RunRegressionTest(D8AppWithLogs, QuickApp): 
@@ -68,7 +70,7 @@ def jobs_rt(context, rt_name, rt, easy_logs_db, out, expect):
     for a in analyzers:
         results_all[a] = OrderedDict()
     
-    for log_name, log in logs.items():
+    for log_name in logs:
         c = context.child(log_name)
         # process one 
         log_out = os.path.join(out, 'logs', log_name + '/'  + 'out.bag')

@@ -24,17 +24,21 @@ def run(which, expect):
 def run_abnormal1():
     run('expect_abnormal1', RTCheck.ABNORMAL)
 
-@comptest
-def run_dontrun():
-    try:
-        run('expect_dontrun', RTCheck.OK)
-    except CmdException:
-        pass
-    
-    
+
 @comptest
 def run_abnormal3():
     run('expect_abnormal3', RTCheck.ABNORMAL)
+    
+    
+@comptest
+def run_dontrun1():
+    try:
+        run('expect_dontrun1', RTCheck.OK)
+    except CmdException as e:
+        if 'NOT-existing' in e.res.stderr:
+            return
+        raise
+    
     
 @comptest
 def run_ok1():
@@ -43,6 +47,9 @@ def run_ok1():
 @comptest
 def run_nodata1():
     run('expect_nodata1', RTCheck.NODATA)
+@comptest
+def run_nodata2():
+    run('expect_nodata2', RTCheck.NODATA)
 
 @comptest
 def run_fail1():
