@@ -5,7 +5,7 @@ jobs:
         - image: andreacensi/duckietown-xenial-kinetic:17
           environment:
               DUCKIEFLEET_ROOT: duckiefleet
-              DUCKIETOWN_ROOT: duckietown-root-to-set
+              DUCKIETOWN_ROOT: /root/project
               DUCKIETOWN_DATA: duckietown-data
      parallelism: 1
      steps:
@@ -37,7 +37,7 @@ jobs:
                 source /opt/ros/kinetic/setup.bash
                 source $PWD/catkin_ws/devel/setup.bash
 
-                export DUCKIETOWN_ROOT=$PWD
+                
                 export HOSTNAME=$HOSTNAME
 
 
