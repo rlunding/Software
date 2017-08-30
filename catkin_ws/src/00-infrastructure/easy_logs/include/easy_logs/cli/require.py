@@ -8,6 +8,7 @@ from duckietown_utils.exceptions import DTConfigException
 from duckietown_utils.system_cmd_imp import system_cmd_result
 from easy_logs.logs_db import get_urls_path,\
     get_easy_logs_db_fresh
+from duckietown_utils.download import download_if_not_exist
 
 def get_dropbox_urls():
     f = get_urls_path()
@@ -65,28 +66,7 @@ def get_log_if_not_exists(logs, log_name):
         else:
             url = urls[log_name]
             
-            if not os.path.exists(filename):
-                download_url_to_file(url, filename)
+            download_if_not_exist(url, filename)
         return filename
     
     
-def download_url_to_file(url, filename):
-    logger.info('Download from %s' % (url))
-    tmp = '/tmp/download'
-    cmd = [
-        'wget',
-        '-O',
-        tmp,
-        url
-    ]
-    _ = system_cmd_result(cwd='.', cmd=cmd,
-              display_stdout=False,
-              display_stderr=False,
-              raise_on_error=True,
-              write_stdin='',
-              capture_keyboard_interrupt=False,
-              env=None)
-    os.rename(tmp, filename)
-                
-    logger.info('-> %s' % filename)
-                

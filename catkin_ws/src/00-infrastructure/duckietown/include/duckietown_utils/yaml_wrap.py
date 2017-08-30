@@ -36,7 +36,7 @@ def yaml_load_file(filename):
         raise ValueError(msg)
     with open(filename) as f:
         contents = f.read()
-    return interpret_yaml_file(filename, contents, lambda filename, data: data)
+    return interpret_yaml_file(filename, contents, lambda _filename, data: data)
 
 def interpret_yaml_file(filename, contents, f):
     """ 

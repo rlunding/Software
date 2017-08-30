@@ -9,12 +9,17 @@ from duckietown_utils.jpg import image_cv_from_jpg_fn, write_jpg_to_file
 from easy_algo.algo_db import get_easy_algo_db
 from line_detector.visual_state_fancy_display import vs_fancy_display
 from line_detector2.run_programmatically import FakeContext
+from duckietown_utils.path_utils import get_ros_package_path
+from duckietown_utils.download import download_if_not_exist
 
 
 @comptest
 def single_image1():
-    fn = 'frame0002.jpg'
-    image_cv = image_cv_from_jpg_fn(fn)
+    url = 'https://www.dropbox.com/s/bzezpw8ivlfu4b0/frame0002.jpg?dl=0'
+    p = os.path.join(get_ros_package_path('line_detector2'), 
+                     'include', 'line_detector2_tests', 'frame0002.jpg')
+    download_if_not_exist(url, p)
+    image_cv = image_cv_from_jpg_fn(p)
     
     line_detector_name = 'baseline'
     image_prep_name = 'prep_200_100'
