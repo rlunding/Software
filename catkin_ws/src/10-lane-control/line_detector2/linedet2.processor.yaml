@@ -1,0 +1,5 @@
+description: Example of line detector
+constructor: line_detector2.run_programmatically.LineDetectorProcessor
+parameters:
+    shape: [200, 320]
+    line_detector: baseline
