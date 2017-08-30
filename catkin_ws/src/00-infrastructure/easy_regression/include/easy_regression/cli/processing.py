@@ -6,9 +6,10 @@ from duckietown_utils.disk_hierarchy import create_tmpdir
 from duckietown_utils.mkdirs import d8n_make_sure_dir_exists
 from easy_algo.algo_db import get_easy_algo_db
 import rosbag  # @UnresolvedImport
+from duckietown_utils.bag_reading import BagReadProxy
 
 
-def process_one(bag_filename, processors, log_out):
+def process_one(bag_filename, t0, t1, processors, log_out):
     logger.info('job_one()')
     logger.info('   input: %s' % bag_filename)
     logger.info('   processors: %s' % processors)
@@ -33,10 +34,13 @@ def process_one(bag_filename, processors, log_out):
     tmpfiles = []
     
     try:
-        for p in processors_instances:
+        for i, p in enumerate(processors_instances):
             next_bag_filename = get_tmp_bag() 
             
             in_bag = rosbag.Bag(bag_filename)
+
+            if i == 0:
+                in_bag = BagReadProxy(in_bag, t0, t1)
             
             out_bag = rosbag.Bag(next_bag_filename, 'w')
             
@@ -48,10 +52,7 @@ def process_one(bag_filename, processors, log_out):
             out_bag.close()
             
             bag_filename = next_bag_filename
-            
-        #shutil.rmtree(tmpdir)
-        
-            
+                
         logger.info('Creating output file %s' % log_out)
         if not processors:
             # just create symlink

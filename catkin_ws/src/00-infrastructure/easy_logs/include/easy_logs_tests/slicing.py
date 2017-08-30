@@ -11,7 +11,7 @@ def parse_expressions():
     db = get_easy_logs_db_cached_if_possible()
     logs = db.logs
     one = logs.keys()[0]
-    l0 = logs[one]
+#     l0 = logs[one]
 #     print yaml_dump_pretty(l0._asdict())
     query = one + '/{10:15}'
     res = fuzzy_match(query, logs, filters=filters_slice, raise_if_no_matches=True)

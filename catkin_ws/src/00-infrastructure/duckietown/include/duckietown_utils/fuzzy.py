@@ -12,6 +12,7 @@ from duckietown_utils.instantiate_utils import indent
 from duckietown_utils.system_cmd_imp import contract
 from duckietown_utils.wildcards import wildcard_to_regexp
 import re
+import random
 
 
 class InvalidQueryForUniverse(Exception):
@@ -113,8 +114,29 @@ class Slice(Spec):
         keys = list(results)
         a,b,c = self.indices
         keys2 = keys[a:b:c]
-        print('leys: %s keys2 : %s' % (keys, keys2))
+#         print('leys: %s keys2 : %s' % (keys, keys2))
         for k in keys2:
+            res[k] = results[k] 
+        return res
+
+class Shuffle(Spec): 
+    def __init__(self, spec):
+        Spec.__init__(self, [spec])
+        
+    def match(self, x):
+        raise NotImplementedError()
+    
+    def __str__(self):
+        s = 'Shuffle'
+        s += '\n' + indent(str(self.children[0]), '  ')
+        return s  
+    
+    def match_dict(self, seq):
+        results = self.children[0].match_dict(seq)
+        res = OrderedDict()
+        keys = list(results)
+        random.shuffle(keys)
+        for k in keys:
             res[k] = results[k] 
         return res
 
@@ -245,12 +267,19 @@ def filter_index(m, spec):
     if b is not None: b = int(b)
     if c is not None: c = int(c)
     return Slice(spec, (a, b, c)) 
-    
+
+def filter_first(_, spec):
+    return OnlyFirst(spec)
+
+def filter_shuffle(_, spec):
+    return Shuffle(spec)
+
 slice_regexp = r'\[(?P<a>-?\d+)?:(?P<b>-?\d+)?(:(?P<c>-?\d+)?)?\]'
 filters0 = OrderedDict([
     ('\[(?P<a>\d+)\]', filter_index_simple),
     (slice_regexp, filter_index),
-    ('first', OnlyFirst),
+    ('first', filter_first),
+    ('shuffle', filter_shuffle),
 ])
 
 @contract(s=str, returns=Spec)   
@@ -279,9 +308,16 @@ def parse_match_spec(s, filters=None):
         if m is not None:
 #             logger.debug('Matched group(1) = %r  group(2) = %r'%(m.group(1), m.group(2)))
             rest = m.group(1)
-            return F(m, rec(rest))
-         
-    check_isinstance(s, str)
+            rest_p = rec(rest)
+            try:
+                return F(m, rest_p)
+            except TypeError as e:
+                msg = 'Problem with %r, calling %s' % (s, F.__name__)
+                raise_wrapped(TypeError, e, msg)
+    if '/' in s:
+        msg = 'I do not know the tag in the string %r.' % s
+        raise InvalidQueryForUniverse(msg)
+    
     if '+' in s:
         tokens = s.split('+')
         return Or(map(rec, tokens))

@@ -101,6 +101,9 @@ def my_filter():
     expect(data, 'all/[0:3]', ['jeb', 'fuffy', 'ronny'])
     
     
+    res = fuzzy_match('all/shuffle', data)
+    assert len(res)==3
+    
 if __name__ == '__main__':
     run_module_tests()
     

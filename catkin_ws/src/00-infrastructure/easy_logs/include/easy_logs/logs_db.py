@@ -10,12 +10,13 @@ from duckietown_utils import logger
 from duckietown_utils.bag_info import rosbag_info_cached
 from duckietown_utils.caching import get_cached
 from duckietown_utils.friendly_path_imp import friendly_path
-from duckietown_utils.fuzzy import fuzzy_match
+from duckietown_utils.fuzzy import fuzzy_match, filters0
 from duckietown_utils.path_utils import get_ros_package_path
 from duckietown_utils.yaml_wrap import look_everywhere_for_bag_files
 from easy_logs.logs_structure import PhysicalLog
 from duckietown_utils.exceptions import DTException
 from duckietown_utils.dates import format_time_as_YYYY_MM_DD
+from easy_logs.time_slice import filters_slice
 
 
 
@@ -82,7 +83,11 @@ class EasyLogsDB():
             Returns an OrderedDict str -> PhysicalLog.
         """
         check_isinstance(query, str)
-        result = fuzzy_match(query, self.logs, raise_if_no_matches=raise_if_no_matches)
+        filters = OrderedDict()
+        filters.update(filters_slice)
+        filters.update(filters0)
+        result = fuzzy_match(query, self.logs, filters=filters,
+                             raise_if_no_matches=raise_if_no_matches)
         return result
 
 def read_stats(pl):

@@ -1,12 +1,13 @@
 from collections import OrderedDict, namedtuple
-
-from duckietown_utils.system_cmd_imp import contract
 from contracts.utils import check_isinstance
-from easy_regression.conditions.interface import RTCheck, RTParseError
-from duckietown_utils.instantiate_utils import indent
-from duckietown_utils.yaml_pretty import yaml_dump_pretty
-from duckietown_utils.exception_utils import raise_wrapped
 import copy
+
+from duckietown_utils.exception_utils import raise_wrapped
+from duckietown_utils.instantiate_utils import indent
+from duckietown_utils.system_cmd_imp import contract
+from duckietown_utils.yaml_pretty import yaml_dump_pretty
+from easy_regression.conditions.interface import RTCheck, RTParseError
+
 
 ChecksWithComment = namedtuple('ChecksWithComment', ['checks', 'comment'])
 

@@ -73,12 +73,14 @@ def jobs_rt(context, rt_name, rt, easy_logs_db, out, expect):
         results_all[a] = OrderedDict()
     
     tmpdir = create_tmpdir()
-    for log_name in logs:
+    for log_name, log in logs.items():
         c = context.child(log_name)
         # process one     
         log_out = os.path.join(tmpdir, 'logs', log_name + '/'  + 'out.bag')
         bag_filename = c.comp(get_log_if_not_exists, easy_logs_db.logs, log_name)
-        log_out_ = c.comp(process_one, bag_filename, processors, log_out, job_id=log_name)
+        t0 = log.t0
+        t1 = log.t1
+        log_out_ = c.comp(process_one, bag_filename, t0, t1, processors, log_out, job_id=log_name)
         
         for a in analyzers:
             results_all[a][log_name] = c.comp(job_analyze, log_out_, a, job_id=a) 
