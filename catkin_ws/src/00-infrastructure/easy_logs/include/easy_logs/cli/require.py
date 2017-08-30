@@ -58,8 +58,8 @@ def get_log_if_not_exists(logs, log_name):
             logger.info('It was already downloaded as %s' % filename)
             return filename
         
-        bag_name = log_name + '.bag'
-        if not bag_name in urls:
+#         bag_name = log_name + '.bag'
+        if not log_name in urls:
             msg = 'No URL found for %r.' % log_name
             raise Exception(msg)
         else:
