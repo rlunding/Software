@@ -16,6 +16,7 @@ from duckietown_utils.yaml_wrap import look_everywhere_for_bag_files
 from easy_logs.logs_structure import PhysicalLog
 from duckietown_utils.exceptions import DTException
 from duckietown_utils.dates import format_time_as_YYYY_MM_DD
+from easy_logs.cli.require import download_url_to_file
 
 
 def get_urls_path():
