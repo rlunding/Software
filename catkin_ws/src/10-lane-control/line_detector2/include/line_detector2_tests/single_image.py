@@ -1,12 +1,14 @@
+from collections import OrderedDict
 from comptests.registrar import comptest, run_module_tests
-import os, cv2
+import os
+
+import cv2
 
 from anti_instagram.AntiInstagram import AntiInstagram
 from duckietown_utils.jpg import image_cv_from_jpg_fn, write_jpg_to_file
 from easy_algo.algo_db import get_easy_algo_db
 from line_detector.visual_state_fancy_display import vs_fancy_display
 from line_detector2.run_programmatically import FakeContext
-from collections import OrderedDict
 
 
 @comptest
@@ -17,9 +19,11 @@ def single_image1():
     line_detector_name = 'baseline'
     image_prep_name = 'prep_200_100'
     res  = run_pipeline(image_cv, line_detector_name, image_prep_name)
+    write_images_as_jpegs('single_image1', res)
+    
+def write_images_as_jpegs(dirname, res):
     for i, (filename, image) in enumerate(res.items()):
-        d = 'single_image1'
-        fn = os.path.join(d,('step%02d-'%i)+filename+'.jpg')
+        fn = os.path.join(dirname,('step%02d-'%i)+filename+'.jpg')
         write_jpg_to_file(image, fn)
         
 def run_pipeline(image, line_detector_name, image_prep_name):
@@ -44,7 +48,6 @@ def run_pipeline(image, line_detector_name, image_prep_name):
     
     ai = AntiInstagram()
     ai.calculateTransform(res['image_input'])
-    
     
     transform = ai.applyTransform 
     

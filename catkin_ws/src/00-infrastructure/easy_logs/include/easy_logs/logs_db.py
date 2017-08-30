@@ -85,7 +85,6 @@ class EasyLogsDB():
         result = fuzzy_match(query, self.logs, raise_if_no_matches=raise_if_no_matches)
         return result
 
-
 def read_stats(pl):
     assert isinstance(pl, PhysicalLog)
 
@@ -104,7 +103,7 @@ def read_stats(pl):
 
     date = format_time_as_YYYY_MM_DD(date_ms)
 
-    pl = pl._replace(date=date, length=length, bag_info=info)
+    pl = pl._replace(date=date, length=length, t0=0, t1=length, bag_info=info)
 
     try:
         vehicle = which_robot(info)
@@ -162,6 +161,7 @@ def load_all_logs(which='*'):
                         map_name=None,
                         description=None,
                         length=None,
+                        t0=None,t1=None,
                         date=date,
                         size=size,
                         has_camera=None,
