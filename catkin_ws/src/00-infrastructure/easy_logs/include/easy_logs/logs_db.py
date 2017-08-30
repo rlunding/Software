@@ -1,23 +1,21 @@
 from collections import OrderedDict
+from contracts.utils import check_isinstance
 import os
 import re
-
-
-from contracts.utils import check_isinstance
-import yaml
 
 from duckietown_utils import logger
 from duckietown_utils.bag_info import rosbag_info_cached
 from duckietown_utils.caching import get_cached
+from duckietown_utils.dates import format_time_as_YYYY_MM_DD
 from duckietown_utils.friendly_path_imp import friendly_path
 from duckietown_utils.fuzzy import fuzzy_match, filters0
 from duckietown_utils.path_utils import get_ros_package_path
-from duckietown_utils.yaml_wrap import look_everywhere_for_bag_files
+from duckietown_utils.yaml_wrap import look_everywhere_for_bag_files, yaml_load_file,\
+    yaml_write_to_file
 from easy_logs.logs_structure import PhysicalLog
-from duckietown_utils.exceptions import DTException
-from duckietown_utils.dates import format_time_as_YYYY_MM_DD
 from easy_logs.time_slice import filters_slice
-
+from duckietown_utils.constants import get_duckietown_root
+import copy
 
 
 def get_urls_path():
@@ -33,6 +31,16 @@ def get_easy_logs_db_cached_if_possible():
         f = EasyLogsDB
 #         use_cache = DuckietownConstants.use_cache_for_logs
         EasyLogsDB._singleton = get_cached('EasyLogsDB', f) #if use_cache else f()
+        
+        fn = os.path.join(get_duckietown_root(),'caches','candidate_cloud.yaml')
+        
+        if not os.path.exists(fn):
+            logs = copy.deepcopy(EasyLogsDB._singleton.logs)
+            # remove the field "filename"
+            for k, v in logs.items():
+                logs[k]=v._replace(filename=None)
+            yaml_write_to_file(logs, fn)
+
     return EasyLogsDB._singleton
 
 def get_easy_logs_db_fresh():
@@ -49,16 +57,9 @@ def get_easy_logs_db_cloud():
         download_url_to_file(url, cloud_file)
     
     logger.info('Loading cloud DB %s' % friendly_path(cloud_file))
-    with open(cloud_file) as f:
-#         logs = yaml.load(f, Loader=ruamel.yaml.Loader)    
-        data = f.read()
-        
-    if not data:
-        msg = 'Cloud DB is empty: %s' % friendly_path(cloud_file)
-        raise DTException(msg)
     
-    logs = yaml.load(data)
-
+    logs = yaml_load_file(cloud_file)
+    
     logs = OrderedDict(logs)
     logger.info('Loaded cloud DB with %d entries.' % len(logs))
     
