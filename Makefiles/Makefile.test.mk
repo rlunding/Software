@@ -38,6 +38,7 @@ comptests_packages=\
 	easy_logs_tests\
 	easy_algo_tests\
 	duckietown_utils_tests\
+	line_detector2_tests\
 	what_the_duck_tests\
 	easy_regression_tests
 

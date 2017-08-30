@@ -59,7 +59,10 @@ def process_one(bag_filename, processors, log_out):
                         'was no processing done.)')
             os.symlink(os.path.realpath(bag_filename), log_out)
         else:
-            shutil.copy(bag_filename, log_out)
+            try:
+                shutil.copy(bag_filename, log_out)
+            except:
+                logger.error('Could not create %s' % log_out)
         logger.info('I created %s' % log_out)
             
 
