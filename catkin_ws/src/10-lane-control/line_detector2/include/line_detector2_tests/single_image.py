@@ -5,12 +5,12 @@ import os
 import cv2
 
 from anti_instagram.AntiInstagram import AntiInstagram
+from duckietown_utils.download import download_if_not_exist
 from duckietown_utils.jpg import image_cv_from_jpg_fn, write_jpg_to_file
+from duckietown_utils.path_utils import get_ros_package_path
 from easy_algo.algo_db import get_easy_algo_db
 from line_detector.visual_state_fancy_display import vs_fancy_display
 from line_detector2.run_programmatically import FakeContext
-from duckietown_utils.path_utils import get_ros_package_path
-from duckietown_utils.download import download_if_not_exist
 
 
 @comptest

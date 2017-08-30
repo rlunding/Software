@@ -16,6 +16,7 @@ from easy_logs.logs_structure import PhysicalLog
 from easy_logs.time_slice import filters_slice
 from duckietown_utils.constants import get_duckietown_root
 import copy
+from duckietown_utils.download import download_url_to_file
 
 
 def get_urls_path():
@@ -53,7 +54,6 @@ def get_easy_logs_db_cloud():
     cloud_file = os.path.join(get_ros_package_path('easy_logs'), 'cloud.yaml')
     if not os.path.exists(cloud_file):
         url = "https://www.dropbox.com/s/vdl1ej8fihggide/duckietown-cloud.yaml?dl=1"
-        from easy_logs.cli.require import download_url_to_file
         download_url_to_file(url, cloud_file)
     
     logger.info('Loading cloud DB %s' % friendly_path(cloud_file))
