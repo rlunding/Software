@@ -63,7 +63,7 @@ def get_log_if_not_exists(logs, log_name):
             msg = 'No URL found for %r.' % log_name
             raise Exception(msg)
         else:
-            url = urls[bag_name]
+            url = urls[log_name]
             
             if not os.path.exists(filename):
                 download_url_to_file(url, filename)
