@@ -23,10 +23,9 @@ class ObstDetectNodeVisual(object):
         self.show_image = (rospy.get_param("~show_image", ""))
         #self.show_image=True
 
-        self.visualizer = Visualizer(robot_name=robot_name)
-
         # Load camera calibration parameters
 	self.intrinsics = load_camera_intrinsics(robot_name)
+        self.visualizer = Visualizer(robot_name=robot_name)
 
         # Create Publishers
         if (self.show_marker):
@@ -39,19 +38,17 @@ class ObstDetectNodeVisual(object):
                 self.publisher_img = rospy.Publisher(self.pub_topic_img, CompressedImage, queue_size=1)
                 print "YEAH I GIVE YOU THE IMAGE"
 
-        # Create necessary Publishers
+        self.sub_topic_arr = '/{}/obst_detect/posearray'.format(robot_name)
+        self.subscriber_arr = message_filters.Subscriber(self.sub_topic_arr, PoseArray)
+        #we MUST subscribe to the array for sure!!
         if (self.show_image):
                 self.sub_topic = '/{}/camera_node/image/compressed'.format(robot_name)
                 self.subscriber = message_filters.Subscriber(self.sub_topic, CompressedImage)
-        if (self.show_image and not(self.show_marker)):
-                self.subscriber.registerCallback(self.callback)
-        if (self.show_marker):
-                self.sub_topic_arr = '/{}/obst_detect/posearray'.format(robot_name)
-                self.subscriber_arr = message_filters.Subscriber(self.sub_topic_arr, PoseArray)
+
         if (self.show_marker and not(self.show_image)):
-                self.subscriber_arr.registerCallback(self.callback)
-        if (self.show_marker and self.show_image):
-                self.ts = message_filters.TimeSynchronizer([self.subscriber_arr,self.subscriber],500)
+                self.subscriber_arr.registerCallback(self.marker_only_callback)
+        else:
+                self.ts = message_filters.TimeSynchronizer([self.subscriber_arr,self.subscriber],100)
                 self.ts.registerCallback(self.callback)
 
     def callback(self,obst_list,image):
@@ -69,6 +66,11 @@ class ObstDetectNodeVisual(object):
                 self.publisher_img.publish(obst_image.data)
 
   
+    def marker_only_callback(self,obst_list):
+        #print "CALLBACK HERE"
+        marker_list = self.visualizer.visualize_marker(obst_list)
+        self.publisher_marker.publish(marker_list)
+
 
     def onShutdown(self):
         rospy.loginfo('Shutting down Visualisation of Obstacle Detection')
