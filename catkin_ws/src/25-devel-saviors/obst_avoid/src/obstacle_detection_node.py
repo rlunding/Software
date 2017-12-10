@@ -59,9 +59,7 @@ class ObstDetectNode(object):
         #1. EXTRACT OBSTACLES and return the pose array
         start = time.time()
         obst_list = self.detector.process_image(rectify(rgb_from_ros(image),self.intrinsics))
-        end = time.time()
-        print "GOING THROUGH OBJECT TOOK: s"
-        print(end - start)
+        
 
         obst_list.header.stamp = image.header.stamp #for synchronization
         #interessant um zu schauen ob stau oder nicht!!!!
@@ -88,6 +86,10 @@ class ObstDetectNode(object):
                 #THIS part only to visualize the cropped version -> somehow a little inefficient but keeps
                 #the visualizer.py modular!!!
                 self.publisher_img.publish(obst_image.data)
+
+        end = time.time()
+        print "GOING THROUGH OBJECT TOOK: s"
+        print(end - start)
 
         self.r.sleep()
 
