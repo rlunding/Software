@@ -12,7 +12,7 @@ class ObstDetectNode(object):
     Obstacle Detection Node
     """
     def __init__(self):
-        self.node_name = "Obstacle Detecion Node"
+        self.node_name = "Obstacle Avoidance Node"
         robot_name = rospy.get_param("~robot_name", "")
         self.count = 1
 
@@ -22,11 +22,11 @@ class ObstDetectNode(object):
 	self.intrinsics = load_camera_intrinsics(robot_name)
 
         # Create a Publisher
-        self.pub_topic = '/{}/obst_detect/image/compressed'.format(robot_name)
+        self.pub_topic = '/{}/obst_avoid/brake'.format(robot_name)
         self.publisher = rospy.Publisher(self.pub_topic, CompressedImage, queue_size=1)
 
         # Create a Subscriber
-        self.sub_topic = '/{}/camera_node/image/compressed'.format(robot_name)
+        self.sub_topic = '/{}/obst_detect/image/compressed'.format(robot_name)
         self.subscriber = rospy.Subscriber(self.sub_topic, CompressedImage, self.callback)
 
     def callback(self, image):

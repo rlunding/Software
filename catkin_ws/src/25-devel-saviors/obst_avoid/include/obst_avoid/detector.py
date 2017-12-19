@@ -19,12 +19,12 @@ from duckietown_utils import get_base_name, load_camera_intrinsics, load_homogra
 from duckietown_utils import load_map, load_camera_intrinsics, load_homography, rectify
 
 class Detector():
-    '''class for detecting obstacles'''
-    def __init__(self, robot_name=''):
-        # Robot name
-    	self.robot_name = robot_name
+	'''class for detecting obstacles'''
+	def __init__(self, robot_name=''):
+		# Robot name
+		self.robot_name = robot_name
 
-        # Load camera calibration parameters
+		# Load camera calibration parameters
 	self.intrinsics = load_camera_intrinsics(robot_name)
 	self.H = load_homography(self.robot_name)
 
@@ -36,14 +36,14 @@ class Detector():
 	# initialize second publisher, later i think we should put this in the "front" file
 	# currently we publish the "bottom" center of the obstacle!!!
 	self.pub_topic2 = '/{}/obst_coordinates'.format(robot_name)
-        self.publisher2 = rospy.Publisher(self.pub_topic2, Point, queue_size=1)
+		self.publisher2 = rospy.Publisher(self.pub_topic2, Point, queue_size=1)
 	
-    def process_image(self, image):
+	def process_image(self, image):
 
 	# CROP IMAGE, image is BGR
- 	im1_cropped = image[self.crop:,:,:]
+	im1_cropped = image[self.crop:,:,:]
 
-        # FILTER IMAGE
+		# FILTER IMAGE
 	# Convert BGR to HSV
 	hsv = cv2.cvtColor(im1_cropped, cv2.COLOR_RGB2HSV)
 	lower_yellow = np.array([20,75,100])
@@ -69,73 +69,72 @@ class Detector():
 	# CHANGE BGR BACK TO RGB
 	jpg_data = image[:,:,::-1]
 	#before sending: REDEFINE DATA 
-    	return d8_compressed_image_from_cv_image(jpg_data)
+		return d8_compressed_image_from_cv_image(jpg_data)
 
 
-    def segment_img(self, image):
+	def segment_img(self, image):
 		#returns segmented image on Grayscale where all interconnected pixels have same number
 		return measure.label(image)
 
 
 
-    def object_filter(self,segmented_img,orig_img):
+	def object_filter(self,segmented_img,orig_img):
 	#for future: filter has to become adaptive to depth
 	i=np.max(segmented_img)
 	for k in range(1,i+1): #iterate through all segmented numbers
 		#first only keep large elements then eval their shape
 		if (np.sum((segmented_img == k))<100): #skip all those who were merged away or have not enough pixels tiefenabh???
-		    segmented_img[(segmented_img == k)]=0
+			segmented_img[(segmented_img == k)]=0
 		else:
-		    
-		    B=np.copy(segmented_img)
-		    B[(B != k)]=0
-		    C=np.nonzero(B)
-		    ITER=np.reshape(C, (2,-1))
-		    #print C 
-		    top=np.min(C[0])
-		    bottom=np.max(C[0])
-		    left=np.min(C[1])
-		    right=np.max(C[1])
-		    height=bottom-top #indices are counted from top to down
-		    total_width=right-left
-		    
-		    # Now finidng the width on the same height
-		    height_left=np.max(ITER[0,(C[1]==left)]) 
-		    width_height_left = np.max(ITER[1,(C[0]==height_left)])
-		    #WIDTH AT HEIGHT OF LEFT POSITION
-		    width_left= width_height_left-left
+			B=np.copy(segmented_img)
+			B[(B != k)]=0
+			C=np.nonzero(B)
+			ITER=np.reshape(C, (2,-1))
+			#print C
+			top=np.min(C[0])
+			bottom=np.max(C[0])
+			left=np.min(C[1])
+			right=np.max(C[1])
+			height=bottom-top #indices are counted from top to down
+			total_width=right-left
 
-		    height_right=np.max(ITER[0,(C[1]==right)]) #ACHTUNG:kann mehrere WERTE HABEN
-		    width_height_right = np.min(ITER[1,(C[0]==height_right)])
-		    #WIDTH AT HEIGHT OF RIGHT POSITION
-		    width_right= right-width_height_right
+			# Now finidng the width on the same height
+			height_left=np.max(ITER[0,(C[1]==left)])
+			width_height_left = np.max(ITER[1,(C[0]==height_left)])
+			#WIDTH AT HEIGHT OF LEFT POSITION
+			width_left= width_height_left-left
 
-		    #print width_right
-		    #print width_left
-		    #print width_right
-		    #print height_left
-		    #print height_right
+			height_right=np.max(ITER[0,(C[1]==right)]) #ACHTUNG:kann mehrere WERTE HABEN
+			width_height_right = np.min(ITER[1,(C[0]==height_right)])
+			#WIDTH AT HEIGHT OF RIGHT POSITION
+			width_right= right-width_height_right
 
-		    #print "NEW OBJECT:"
-		    #print bottom
-		    #print width_right
-		    #print 1.0*width_right/bottom
+			#print width_right
+			#print width_left
+			#print width_right
+			#print height_left
+			#print height_right
 
-		    #WIDTH AT TOP
-		    #MUSS NOCH ABFRAGE HIN DAMIT MAN NICHT OUT OF BOUNDS LAEUFT
-		    #width_top = np.max(ITER[1,(C[0]==top+int(0.5*height))])-np.min(ITER[1,(C[0]==top+int(0.5*height))])
+			#print "NEW OBJECT:"
+			#print bottom
+			#print width_right
+			#print 1.0*width_right/bottom
 
-		    #if (abs(height_left-height_right)>10): #FILTER 1
-		    #    final[(final == k)]=0
-		    #if (abs(width_top-width_right)<20): #FILTER 2
-		    #    final[(final == k)]=0
+			#WIDTH AT TOP
+			#MUSS NOCH ABFRAGE HIN DAMIT MAN NICHT OUT OF BOUNDS LAEUFT
+			#width_top = np.max(ITER[1,(C[0]==top+int(0.5*height))])-np.min(ITER[1,(C[0]==top+int(0.5*height))])
 
-		    if (1.0*width_right/bottom<0.25): #FILTER 3
-		        segmented_img[(segmented_img == k)]=0
+			#if (abs(height_left-height_right)>10): #FILTER 1
+			#    final[(final == k)]=0
+			#if (abs(width_top-width_right)<20): #FILTER 2
+			#    final[(final == k)]=0
 
-		    else:
-		        #UEBERGABE?
-		        obst_coordinates = Point()
+			if (1.0*width_right/bottom<0.25): #FILTER 3
+				segmented_img[(segmented_img == k)]=0
+
+			else:
+				#UEBERGABE?
+				obst_coordinates = Point()
 			point_calc=np.zeros((3,1),dtype=np.float)
 			#take care cause image was cropped,..
 			point_calc= np.dot(self.H,[[left+0.5*total_width],[bottom+self.crop],[1]])
@@ -148,9 +147,9 @@ class Detector():
 			#of drive with x pointing in direction and y to the left of direction of drive in [m]		        
 			cv2.rectangle(orig_img,(np.min(C[1]),np.min(C[0])),(np.max(C[1]),np.max(C[0])),(0,255,0),3)
 
-	    #eig box np.min breite und hoehe!! if they passed the test!!!!
-	    #print abc
-	    
+		#eig box np.min breite und hoehe!! if they passed the test!!!!
+		#print abc
+
 	return orig_img
 
 
@@ -159,53 +158,53 @@ class Detector():
 
 
 
-    def ground2pixel(self, point):
-        '''Transforms point in ground coordinates to point in image
-        coordinates using the inverse homography'''
+	def ground2pixel(self, point):
+		'''Transforms point in ground coordinates to point in image
+		coordinates using the inverse homography'''
 	point_calc=np.zeros((3,1),dtype=np.float)
 	point_calc= np.dot(inv(self.H),[[point[0]],[point[1]],[1]])
 
 	pixel_int=[int((point_calc[0])/point_calc[2]),int((point_calc[1])/point_calc[2])]
 	#print pixel_float
-        return pixel_int
+		return pixel_int
 
-    def just2pixel(self, point):
-        '''Draw Lines around picture'''
-        return [point[0]*640,point[1]*480]
+	def just2pixel(self, point):
+		'''Draw Lines around picture'''
+		return [point[0]*640,point[1]*480]
 
 
-    def render_segments(self, image):
-        for segment in self.map_data["segments"]:	
-            pt_x = []
-            pt_y = []
-            for point in segment["points"]:
-                frame, ground_point = self.map_data["points"][point]
-                pixel = []
-                if frame == 'axle':
-                    pixel = self.ground2pixel(ground_point)
-                elif frame == 'camera':
-                    pixel = ground_point
-                elif frame == 'image01':
-                    pixel = self.just2pixel(ground_point)
-                else:
-                    logger.info('Unkown reference frame. Using "axle" frame')
-                    pixel = self.ground2pixel(ground_point)
-                pt_x.append(pixel[0])
-                pt_y.append(pixel[1])
-            color = segment["color"]
-            image = self.draw_segment(image, pt_x, pt_y, color)
-        return image
+	def render_segments(self, image):
+		for segment in self.map_data["segments"]:
+			pt_x = []
+			pt_y = []
+			for point in segment["points"]:
+				frame, ground_point = self.map_data["points"][point]
+				pixel = []
+				if frame == 'axle':
+					pixel = self.ground2pixel(ground_point)
+				elif frame == 'camera':
+					pixel = ground_point
+				elif frame == 'image01':
+					pixel = self.just2pixel(ground_point)
+				else:
+					logger.info('Unkown reference frame. Using "axle" frame')
+					pixel = self.ground2pixel(ground_point)
+				pt_x.append(pixel[0])
+				pt_y.append(pixel[1])
+			color = segment["color"]
+			image = self.draw_segment(image, pt_x, pt_y, color)
+		return image
 
-    def draw_segment(self, image, pt_x, pt_y, color):
-        defined_colors = {
-            'red' : ['rgb', [1, 0, 0]],
-            'green' : ['rgb', [0, 1, 0]],
-            'blue' : ['rgb', [0, 0, 1]],
-            'yellow' : ['rgb', [1, 1, 0]],
-            'magenta' : ['rgb', [1, 0 ,1]],
-            'cyan' : ['rgb', [0, 1, 1]],
-            'white' : ['rgb', [1, 1, 1]],
-            'black' : ['rgb', [0, 0, 0]]}
-        color_type, [r, g, b] = defined_colors[color]
-        cv2.line(image, (pt_x[0], pt_y[0]),(pt_x[1], pt_y[1]),(b * 255, g* 255, r * 255), 5)
-        return image
+	def draw_segment(self, image, pt_x, pt_y, color):
+		defined_colors = {
+			'red' : ['rgb', [1, 0, 0]],
+			'green' : ['rgb', [0, 1, 0]],
+			'blue' : ['rgb', [0, 0, 1]],
+			'yellow' : ['rgb', [1, 1, 0]],
+			'magenta' : ['rgb', [1, 0 ,1]],
+			'cyan' : ['rgb', [0, 1, 1]],
+			'white' : ['rgb', [1, 1, 1]],
+			'black' : ['rgb', [0, 0, 0]]}
+		color_type, [r, g, b] = defined_colors[color]
+		cv2.line(image, (pt_x[0], pt_y[0]),(pt_x[1], pt_y[1]),(b * 255, g* 255, r * 255), 5)
+		return image
