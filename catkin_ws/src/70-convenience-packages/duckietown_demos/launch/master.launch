@@ -26,7 +26,7 @@
 
 <!-- general convention on remappings is that we remap the "subscribers" -->
 
-	<!-- start switch args -->
+	<!-- start switch args; camera,cam_info used to be true!! -->
 	<arg name="camera" default="true"/>
 	<arg name="/camera/raw" default="false"/>
 	<arg name="/camera/cam_info" default="true"/>
