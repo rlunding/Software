@@ -38,9 +38,9 @@ class Avoider():
 		if len(obstacle_poses_on_track) == 1:
 			d_robot = self.d_current
 			theta = self.theta_current
-			# x_obstacle = ...
-			# y_obstacle = ...
-			# r_obstacle = ...
+			x_obstacle = obstacle_poses_on_track[0].pose.x
+			y_obstacle = obstacle_poses_on_track[0].pose.y
+			r_obstacle = obstacle_poses_on_track[0].pose.z
 			global_pos_vec = self.coordinatetransform(x_obstacle, y_obstacle, -theta, d_robot)
 			x_global = global_pos_vec[1]
 			y_global = global_pos_vec[2]
