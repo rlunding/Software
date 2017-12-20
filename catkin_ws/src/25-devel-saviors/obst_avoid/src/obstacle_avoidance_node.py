@@ -29,13 +29,13 @@ class ObstAvoidNode(object):
         self.pub_topic = 'obstacle_avoidance_active_flag'.format(robot_name)
         self.brake_pub = rospy.Publisher(self.pub_topic, Binary, queue_size=1)
 
-        # Desired d. Only read when Obstacle is detected
-        self.pub_topic = '/{}/obst_avoid/d_desired'.format(robot_name)
-        self.publisher = rospy.Publisher(self.pub_topic, Float32, queue_size=1)
+        # Target d. Only read when Obstacle is detected
+        self.pub_topic = '/{}/obst_avoid/d_target'.format(robot_name)
+        self.d_target_pub = rospy.Publisher(self.pub_topic, Float32, queue_size=1)
         # ToDo: Consider Float32MultiArray if theta will be used.
-        # Desired theta for dev-controllers to tune the controls
-        self.pub_topic = '/{}/obst_avoid/theta_desired'.format(robot_name)
-        self.publisher = rospy.Publisher(self.pub_topic, Float32, queue_size=1)
+        # Target theta for dev-controllers to tune the controls
+        self.pub_topic = '/{}/obst_avoid/theta_target'.format(robot_name)
+        self.theta_target_pub = rospy.Publisher(self.pub_topic, Float32, queue_size=1)
 
         ########################
         ###### Subscribers #####
@@ -68,9 +68,12 @@ class ObstAvoidNode(object):
             self.brake_pub.publish(0)
             return
         if amount_obstacles_on_track = 1:
-            self.brake_pub.publish(0)
             #ToDo: check if self.d_current can be accessed through forwarding of self
-            avoid(self, obstacle_poses_on_track) #,self.d_current,self.theta_current)
+            targets = avoid(self, obstacle_poses_on_track) #,self.d_current,self.theta_current)
+            self.d_target_pub.publish(targets[0])
+            self.brake_pub.publish(targets[1])
+            self.theta_target_pub.publish(targets[2])
+        else:
             self.brake_pub.publish(1)
         return
 
