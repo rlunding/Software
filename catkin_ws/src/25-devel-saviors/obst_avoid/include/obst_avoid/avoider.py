@@ -2,6 +2,7 @@
 
 import argparse
 import numpy as np
+import math
 from numpy.linalg import inv
 from numpy import linalg as LA
 from os.path import basename, expanduser, isfile, join, splitext
@@ -21,6 +22,44 @@ from duckietown_utils import load_map, load_camera_intrinsics, load_homography, 
 class Avoider():
 	'''class to avoid detected obstacles'''
 	def __init__(self, robot_name=''):
-	# Robot name
-	self.robot_name = robot_name
+		# Robot name
+		self.robot_name = robot_name
+
+	# Parameter defintions
+	self.lWidthRobot = 140 # mm
+	self.lWidthLane = 250 # mm
+
+	# Control parameters
+	self.yAvoidanceMargin = 20 # mm
+
+	def avoid(self, obstacle_poses_on_track, d_robot, theta):
+		d_target = 0
+		emergency_stop = 0
+		if len(obstacle_poses_on_track) == 1:
+			d_robot = self.d_current
+			theta = self.theta_current
+			# x_obstacle = ...
+			# y_obstacle = ...
+			# r_obstacle = ...
+			global_pos_vec = self.coordinatetransform(x_obstacle, y_obstacle, -theta, d_robot)
+			x_global = global_pos_vec[1]
+			y_global = global_pos_vec[2]
+			# Stop if there is no space
+			if abs(y_global) + self.lWidthLane / 2 - r_obstacle < self.lWidthRobot + self.yAvoidanceMargin:
+				print('Emergency Stop')
+				emergency_stop = 1
+			# React if possible
+			d_target = y_global - np.sign(y_global) * (self.lWidthRobot / 2 + self.yAvoidanceMargin + r_obstacle)
+		elif len(obstacle_poses_on_track) > 1:
+			print('Number of obstacles reaching avoid function too high')
+		targets = [d_target, emergency_stop]
+		return targets
+
+	def coordinatetransform(self, x_obstacle, y_obstacle, theta, d_robot):
+		vector_local = np.array([x_obstacle, y_obstacle])
+		rot_matrix = np.matrix([math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)])
+		vector_global = rot_matrix * vector_local + np.array([0, d_robot])
+		x_global = vector_global(1)
+		y_global = vector_global(2)
+		return np.array([x_global, y_global])
 
