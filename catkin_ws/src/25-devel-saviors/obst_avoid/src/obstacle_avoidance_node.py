@@ -9,14 +9,16 @@ from geometry_msgs.msg import PoseArray
 from obst_avoid.detector import Detector
 from duckietown_utils import get_base_name, rgb_from_ros, rectify, load_camera_intrinsics
 
-
 class ObstAvoidNode(object):
+
     def __init__(self):
         self.node_name = "Obstacle Avoidance Node"
+        self.d_current
+        self.theta_current
+        self.intersection
         robot_name = rospy.get_param("~robot_name", "")
-        self.count = 1
+        self.avoider = Avoider(robot_name=robot_name)
 
-        self.detector = Detector(robot_name=robot_name)  # not sure what that does
 
         ########################
         ###### Publishers ######
@@ -56,29 +58,32 @@ class ObstAvoidNode(object):
 
     def obstacleCallback(self, obstacle_poses):
         amount_obstacles = len(obstacle_poses)
-        amount_obstacles_on_track = 0;
+        amount_obstacles_on_track = 0
+        obstacle_poses_on_track = []
         for x in range(0, amount_obstacles, 1):
             if obstacle_poses[0].pose.z > 0:
+                obstacle_poses_on_track[amount_obstacles_on_track] = obstacle_poses[x]
                 amount_obstacles_on_track+=1
         if amount_obstacles_on_track = 0:
+            self.brake_pub.publish(0)
             return
         if amount_obstacles_on_track = 1:
-            avoid()
-        else:
-            self.brake_pub.publish(1);
-
+            self.brake_pub.publish(0)
+            #ToDo: check if self.d_current can be accessed through forwarding of self
+            avoid(self, obstacle_poses_on_track) #,self.d_current,self.theta_current)
+            self.brake_pub.publish(1)
         return
 
-    def dCallback(self):
+    def dCallback(self, d_update):
+        self.d_current = d_update
         return
 
-    def thetaCallback(self):
+    def thetaCallback(self, theta_update):
+        self.theta_current = theta_update
         return
 
-    def thetaCallback(self):
-        return
-
-    def intersectionCallback(self):
+    def intersectionCallback(self, intersection_update):
+        self.intersection = intersection_update
         return
 
     def lineCallback(self):
