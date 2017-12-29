@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy
-from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import CompressedImage, Image
 from geometry_msgs.msg import PoseArray
 from visualization_msgs.msg import MarkerArray
 import time
@@ -17,9 +17,10 @@ class ObstDetectNode(object):
     """
     def __init__(self):
         self.node_name = "Obstacle Detecion Node"
-        robot_name = rospy.get_param("~robot_name", "")
+        robot_name = rospy.get_param("~veh", "")
         self.show_marker = (rospy.get_param("~show_marker", ""))
         self.show_image = (rospy.get_param("~show_image", ""))
+        self.use_ai = (rospy.get_param("~use_ai", ""))
         
         self.r = rospy.Rate(3) # Rate in Hz
         self.thread_lock = threading.Lock()
@@ -47,10 +48,14 @@ class ObstDetectNode(object):
                 print "show_image is active: image will be published as /veh/obst_detect/image_cropped/compressed"
 
         # Create a Subscriber
-        self.sub_topic = '/{}/camera_node/image/compressed'.format(robot_name)
-        self.subscriber = rospy.Subscriber(self.sub_topic, CompressedImage, self.callback_img,queue_size=1, buff_size=2**24)
-        #buff size to approximately close to 2^24 such that always most recent pic is taken
-        #essentail 
+        if (self.use_ai):
+            self.sub_topic = '/{}/image_transformer_node/corrected_image'.format(robot_name)
+            self.subscriber = rospy.Subscriber(self.sub_topic, Image, self.callback_img,queue_size=1, buff_size=2**24)
+            #buff size to approximately close to 2^24 such that always most recent pic is taken
+            #essentail 
+        else:
+            self.sub_topic = '/{}/camera_node/image/compressed'.format(robot_name)
+            self.subscriber = rospy.Subscriber(self.sub_topic, CompressedImage, self.callback_img,queue_size=1, buff_size=2**24)
 
     def callback_img(self, image):
         thread = threading.Thread(target=self.callback,args=(image,))
@@ -63,7 +68,7 @@ class ObstDetectNode(object):
         if not self.thread_lock.acquire(False):
             return
 
-        start = time.time()
+        #start = time.time()
         obst_list = PoseArray()
         marker_list = MarkerArray()
     
@@ -97,9 +102,9 @@ class ObstDetectNode(object):
                 #the visualizer.py modular!!!
                 self.publisher_img.publish(obst_image.data)
 
-        end = time.time()
-        print "GOING THROUGH TOOK: s"
-        print(end - start)
+        #end = time.time()
+        #print "OBST DETECTION TOOK: s"
+        #print(end - start)
         self.r.sleep()
         self.thread_lock.release()
 
