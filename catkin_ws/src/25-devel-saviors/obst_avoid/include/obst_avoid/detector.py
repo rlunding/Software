@@ -35,20 +35,24 @@ class Detector():
 
 	#define where to cut the image, color range,...
 	self.crop = 150 #default value but is overwritten in init_homo
-	self.lower_yellow = np.array([20,100,150])
+	#self.lower_yellow = np.array([20,100,150]) #more restrictive -> if you can be sure for "no reddish yellow"
+	self.lower_yellow = np.array([15,100,200])
 	self.upper_yellow = np.array([35,255,255])
-	self.lower_orange = np.array([5,100,150])
+	self.lower_orange = np.array([0,100,100])
 	self.upper_orange = np.array([15,255,255])
 	self.lower_white = np.array([0,0,150])
 	self.upper_white = np.array([255,25,255])
 
-
+	self.ref_world_point_x = 1.7 #this is the reference world point where we crop the img
+	self.major_intertia_thres = 20 #if you want to detect very little ducks might lower it to 10, not smaller,..
+ 
+	
 	self.img_width = 0 #to be set in init_inv_homography
 	self.img_height = 0 #to be set in init_inv_homography
 	self.maximum_height = 0 #to be set in ground2bird_view_pixel_init
 	self.maximum_left = 0
 	self.factor = 1.0 #to be set in ground2bird_view_pixel_init
-	self.obst_thres = 50 #to be set in init_inv_homography, this is default
+	self.obst_thres = 35 #to be set in init_inv_homography, this is default
 	self.minimum_tracking_distance = 60
 	self.new_track_array = np.array([])
 
@@ -63,7 +67,7 @@ class Detector():
 
 
     def init_inv_homography(self):
-    	reference_world_point = np.float32([[1.4],[0.0],[1.0]]) #adaptive cropping is dangerous
+    	reference_world_point = np.float32([[self.ref_world_point_x],[0.0],[1.0]]) #adaptive cropping is dangerous
     	real_pix_of_ref_point = self.ground2real_pic_pixel(reference_world_point)
     	image_height = 480 #default height of image
     	self.crop = int(real_pix_of_ref_point[1])
@@ -97,6 +101,8 @@ class Detector():
 	mask1 = cv2.inRange(im_test, self.lower_yellow, self.upper_yellow)
 	mask2 = cv2.inRange(im_test, self.lower_orange, self.upper_orange)
 	mask = np.bitwise_or((mask1/2),mask2)
+	#mask = mask1/2 #to only test yellow
+	#mask = mask2 #to only test orange
 	#yellow objects have value 127, orange 255
 	if(np.sum(mask!=0)!=0): #there were segment detected then
 		#SEGMENT IMAGE
@@ -134,22 +140,30 @@ class Detector():
 		        total_height = bottom - top
 		        # yellow: 127, orange: 255
 		        color_info = props[k-1]['max_intensity']
-		        print color_info
-		        print total_width
-		        print total_height
-		        #if ((color_info == 127 and total_width > 10) or (color_info == 255 and (total_width < 150 and total_height > 32))):
-		        #if ((color_info == 127 and total_width > 10) or (color_info == 255 and (props[k-1]['extent']<0.2 or (abs(props[k-1]['orientation'])>1.2) and props[k-1]['minor_axis_length']<10))):
-			if ((color_info == 127 and total_width > 10) or (color_info == 255 and (0.5*props[k-1]['perimeter']/props[k-1]['major_axis_length']<1.0))):
 
+
+			#to take small duckies into account:(color_info == 127 and props[k-1]['inertia_tensor_eigvals'][0]>10)
+			if ((color_info == 127 and props[k-1]['inertia_tensor_eigvals'][0]>self.major_intertia_thres) or \
+			(color_info ==255 and \
+			props[k-1]['inertia_tensor_eigvals'][0]/props[k-1]['inertia_tensor_eigvals'][1]>50)): 
+			
 			        obst_object = Pose()
-			        new_position = np.array([[left+0.5*total_width],[bottom]])
-			        # Checks if there is close object from frame before
-			        distance_min = self.obst_tracker(new_position)
-                 		if distance_min < self.minimum_tracking_distance:
+			        if (color_info == 127): #means: yellow object:
+			        	#old fill weight tracker:
+			        	#new_position = np.array([[left+0.5*total_width],[bottom],[props[k-1]['inertia_tensor_eigvals'][0]],[props[k-1]['inertia_tensor_eigvals'][1]],[-1],[0],[0],[0]])
+			        	#new leightweight version:
+			        	new_position = np.array([[left+0.5*total_width],[bottom],[props[k-1]['inertia_tensor_eigvals'][0]],[0]])	
+			        	# Checks if there is close object from frame before 
+			        	checker = self.obst_tracker(new_position)
+			        else:
+			        	checker = True
+			        
+			        # Checks if there is close object from frame before 
+                 		if (checker):
 					point_calc=np.zeros((3,2),dtype=np.float)
 					point_calc=self.bird_view_pixel2ground(np.array([[left+0.5*total_width,left],[bottom,bottom]]))
 					obst_object.position.x = point_calc[0,0] #obstacle coord x
-					if (point_calc[0,0]<0.5):
+					if (point_calc[0,0]<0.35):
 						print "DANGEROUS OBSTACLE:"
 						print  point_calc[0:2,0]
 					obst_object.position.y = point_calc[1,0] #obstacle coord y
@@ -160,10 +174,10 @@ class Detector():
 						line1 =  np.array([measure.profile_line(image, (self.center_y,self.center_x), (bottom,right), linewidth=1, order=1, mode='constant')])
 					else:
 						line1 =  np.array([measure.profile_line(image, (self.center_y,self.center_x), (bottom,left), linewidth=1, order=1, mode='constant')])
-            				#bottom,left
-            				line1 =  cv2.inRange(line1, self.lower_white, self.upper_white)
-            				if (np.sum(line1==255)>3):
-            					obst_object.position.z = -1*obst_object.position.z #means it is out of bounds!
+	    				#bottom,left
+	    				line1 =  cv2.inRange(line1, self.lower_white, self.upper_white)
+	    				if (np.sum(line1==255)>3):
+	    					obst_object.position.z = -1*obst_object.position.z #means it is out of bounds!
 
 					#fill in the pixel boundaries of bird view image!!!
 					obst_object.orientation.x = top
@@ -185,23 +199,52 @@ class Detector():
     def obst_tracker(self,new_position):
     	#input: array of the current track_array which will be used in the next frame
     	#input: new_position in 2D image which has to be checked if it could be tracked from the image before
-    	#outout: minimum distance to an obstacle in the image before, 2*minimum_tracking_distance if there haven't been obstacles in the frame before
-    	if self.new_track_array.size == 0:
-                self.new_track_array = new_position
-        else: 
-		self.new_track_array = np.append(self.new_track_array,new_position,axis=1)
-				
+    	#outout: minimum distance to an obstacle in the image before, 2*minimum_tracking_distance if there haven't been obstacles in the frame before			
 	if self.track_array.size != 0:
-		distances = -(self.track_array - new_position)
+		distances = -(self.track_array[0:2,:] - new_position[0:2,:]) #only interested in depth change
 		distances_norms = LA.norm(distances, axis=0)
 		distance_min = np.amin(distances_norms)
 		distance_min_index = np.argmin(distances_norms)
 		y_distance = distances[1,distance_min_index]
-		if y_distance < -5:
+
+		if (y_distance < -5): #CHANGE OF DEPTH in PIXELS
+			#print "DISTANCE CRITAERIA"
 			distance_min = 2*self.minimum_tracking_distance
 	else:
 		distance_min = 2*self.minimum_tracking_distance
-	return distance_min
+
+	#FINALE AUSWERTUNG:
+	if (distance_min < self.minimum_tracking_distance): #only then modify the entry!
+		major_mom_change = abs(1- abs(self.track_array[2,distance_min_index]/new_position[2,:]))
+		#LEFT OUT DUE TO NO EFFICIENCY BUT ATTNETION: NOW ONE ELEMENT CAN SAY IT IS CLOSE TO MULTIPLE,...
+		#new_position[4,:] = distance_min_index #show where we reference to
+		#new_position[5,:] = distance_min 
+		#self.track_array[6,distance_min_index] = self.track_array[6,distance_min_index] +1 #indicate someone refers to this
+		#if (self.track_array[6,distance_min_index]>1):
+	#		self.track_array[6,distance_min_index] = self.track_array[6,distance_min_index] - 1 #decr again
+	#		#print "!!!!!!!!!MULTIPLE REFERENCES!!!!!!!!!!!!!!!!!!" #we must get active
+	#		competitor_idx = np.argmax(self.new_track_array[4,:]==distance_min_index)
+	#		if (self.new_track_array[4,competitor_idx]<new_position[5,:]): #competitor is closer and can stay
+	#			distance_min = 2*self.minimum_tracking_distance
+	#			new_position[4,:] = -1 #track lost!
+	#		else: #current point is closer
+	#			distance_min = 2*self.minimum_tracking_distance
+	#			self.new_track_array[4,competitor_idx] = -1 #track lost
+	#			self.new_track_array[7,competitor_idx] = 0 #track lost
+	#			new_position[7,:]= self.track_array[7,distance_min_index]+1
+	#	else:
+		new_position[3,:]= self.track_array[3,distance_min_index]+1
+		
+		if ((new_position[3,:]<100 or major_mom_change>1.5) and new_position[3,:]<4): #not seen 4 times yet
+			#print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+			distance_min = 2*self.minimum_tracking_distance
+		
+
+	if self.new_track_array.size == 0:
+                self.new_track_array = new_position
+        else: 
+		self.new_track_array = np.append(self.new_track_array,new_position,axis=1)
+	return (distance_min < self.minimum_tracking_distance)
 
     def real_pic_pixel2ground(self,real_pic_pixel):
     	#input: pixel coordinates of real picture in homogeneous coords (3byN)

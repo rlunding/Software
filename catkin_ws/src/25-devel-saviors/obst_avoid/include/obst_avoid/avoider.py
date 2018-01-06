@@ -25,34 +25,36 @@ class Avoider():
 		# Robot name
 		self.robot_name = robot_name
 
-	# Parameter defintions
-	self.lWidthRobot = 140 # mm
-	self.lWidthLane = 250 # mm
+	# Parameter definitions
+	self.lWidthRobot = 140  # mm
+	self.lWidthLane = 250  # mm
 
 	# Control parameters
-	self.yAvoidanceMargin = 20 # mm
+	self.yAvoidanceMargin = 20  # mm
 
 	def avoid(self, obstacle_poses_on_track, d_robot, theta):
-		d_target = 0
+		self.d_target = 0
+		self.d_robot = d_robot
+		self.theta = theta
 		emergency_stop = 0
 		if len(obstacle_poses_on_track) == 1:
-			d_robot = self.d_current
-			theta = self.theta_current
+			# self.d_robot = self.d_current
+			# self.theta = self.theta_current
 			x_obstacle = obstacle_poses_on_track[0].pose.x
 			y_obstacle = obstacle_poses_on_track[0].pose.y
 			r_obstacle = obstacle_poses_on_track[0].pose.z
-			global_pos_vec = self.coordinatetransform(x_obstacle, y_obstacle, -theta, d_robot)
-			x_global = global_pos_vec[1]
+			global_pos_vec = self.coordinatetransform(x_obstacle, y_obstacle, -self.theta, self.d_robot)
+			# x_global = global_pos_vec[1]
 			y_global = global_pos_vec[2]
 			# Stop if there is no space
 			if abs(y_global) + self.lWidthLane / 2 - r_obstacle < self.lWidthRobot + self.yAvoidanceMargin:
 				print('Emergency Stop')
 				emergency_stop = 1
 			# React if possible
-			d_target = y_global - np.sign(y_global) * (self.lWidthRobot / 2 + self.yAvoidanceMargin + r_obstacle)
+			self.d_target = y_global - np.sign(y_global) * (self.lWidthRobot / 2 + self.yAvoidanceMargin + r_obstacle)
 		elif len(obstacle_poses_on_track) > 1:
 			print('Number of obstacles reaching avoid function too high')
-		targets = [d_target, emergency_stop]
+		targets = [self.d_target, emergency_stop]
 		return targets
 
 	def coordinatetransform(self, x_obstacle, y_obstacle, theta, d_robot):
@@ -62,4 +64,3 @@ class Avoider():
 		x_global = vector_global(1)
 		y_global = vector_global(2)
 		return np.array([x_global, y_global])
-
