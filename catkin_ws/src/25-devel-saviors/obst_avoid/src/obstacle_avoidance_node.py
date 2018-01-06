@@ -17,9 +17,9 @@ class ObstAvoidNode(object):
         self.d_current = 0
         self.theta_current = 0
         self.intersection = 0
-        robot_name = rospy.get_param("~robot_name", "")
+        robot_name = rospy.get_param("~veh", "")
         self.avoider = Avoider(robot_name=robot_name)
-
+        rospy.loginfo(robot_name)
         # self.detector = Detector(robot_name=robot_name)  # not sure what that does
 
         ########################
@@ -51,7 +51,7 @@ class ObstAvoidNode(object):
         self.subscriber = rospy.Subscriber(self.sub_topic, CompressedImage, self.thetaCallback)
 
         # ToDo: intersection
-        self.sub_topic = '/{}/'.format(robot_name)
+        self.sub_topic = '/{}/banana'.format(robot_name)
         self.subscriber = rospy.Subscriber(self.sub_topic, CompressedImage, self.intersectionCallback)
 
         # ToDo: line_detection
@@ -59,26 +59,31 @@ class ObstAvoidNode(object):
         self.subscriber = rospy.Subscriber(self.sub_topic, CompressedImage, self.lineCallback)
 
     def obstacleCallback(self, obstacle_poses):
-        amount_obstacles = len(obstacle_poses)
+        amount_obstacles = len(obstacle_poses.poses)
         amount_obstacles_on_track = 0
-        rospy.loginfo('Callbakkkk')
+        rospy.loginfo('Number of obstacles: %d', len(obstacle_poses.poses))
         amount_obstacles_on_track = 0
-        obstacle_poses_on_track = []
-        for x in range(0, amount_obstacles, 1):
-            if obstacle_poses[0].pose.z > 0:
-                obstacle_poses_on_track[amount_obstacles_on_track] = obstacle_poses[x]
+        obstacle_poses_on_track = PoseArray()
+        obstacle_poses_on_track.header = obstacle_poses.header
+        for x in range(amount_obstacles):
+            rospy.loginfo(obstacle_poses.poses[x].position.z)
+            if obstacle_poses.poses[x].position.z > 0:
+                obstacle_poses_on_track.poses.append(obstacle_poses.poses[x])
                 amount_obstacles_on_track+=1
         if amount_obstacles_on_track == 0:
             self.brake_pub.publish(0)
+            rospy.loginfo('0 obstacles on track')
             return
         if amount_obstacles_on_track == 1:
             #ToDo: check if self.d_current can be accessed through forwarding of self
-            targets = Avoider.avoid(self, obstacle_poses_on_track) #,self.d_current,self.theta_current)
+            targets = Avoider.avoid(self, obstacle_poses_on_track, self.d_current,self.theta_current)
             self.d_target_pub.publish(targets[0])
             self.brake_pub.publish(targets[1])
             self.theta_target_pub.publish(targets[2])
+            rospy.loginfo('1 obstacles on track')
         else:
             self.brake_pub.publish(1)
+            rospy.loginfo('%d obstacles on track', amount_obstacles_on_track)
         return
 
     def dCallback(self, d_update):
