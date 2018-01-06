@@ -25,12 +25,12 @@ class Avoider():
 		# Robot name
 		self.robot_name = robot_name
 
-	# Parameter defintions
-	self.lWidthRobot = 140 # mm
-	self.lWidthLane = 250 # mm
+	# Parameter definitions
+	self.lWidthRobot = 140  # mm
+	self.lWidthLane = 250  # mm
 
 	# Control parameters
-	self.yAvoidanceMargin = 20 # mm
+	self.yAvoidanceMargin = 20  # mm
 
 	def avoid(self, obstacle_poses_on_track, d_robot, theta):
 		self.d_target = 0
@@ -44,7 +44,7 @@ class Avoider():
 			y_obstacle = obstacle_poses_on_track[0].pose.y
 			r_obstacle = obstacle_poses_on_track[0].pose.z
 			global_pos_vec = self.coordinatetransform(x_obstacle, y_obstacle, -self.theta, self.d_robot)
-			x_global = global_pos_vec[1]
+			# x_global = global_pos_vec[1]
 			y_global = global_pos_vec[2]
 			# Stop if there is no space
 			if abs(y_global) + self.lWidthLane / 2 - r_obstacle < self.lWidthRobot + self.yAvoidanceMargin:
