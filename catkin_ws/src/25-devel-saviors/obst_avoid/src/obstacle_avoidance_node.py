@@ -4,6 +4,7 @@ from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import Bool
 from std_msgs.msg import Float32
 from geometry_msgs.msg import PoseArray
+from duckietown_msgs.msg import LanePose
 
 ### note you need to change the name of the robot to yours here
 # from obst_avoid.detector import Detector
@@ -45,10 +46,8 @@ class ObstAvoidNode(object):
         self.subscriber = rospy.Subscriber(self.sub_topic, PoseArray, self.obstacleCallback)
 
         # ToDo: d_current, theta_current
-        self.sub_topic = '/{}/localization_node/'.format(robot_name)
-        self.subscriber = rospy.Subscriber(self.sub_topic, CompressedImage, self.dCallback)
-        self.sub_topic = '/{}/localization_node/'.format(robot_name)
-        self.subscriber = rospy.Subscriber(self.sub_topic, CompressedImage, self.thetaCallback)
+        self.sub_topic = '/{}/lane_filter_node/lane_pose/'.format(robot_name)
+        self.subscriber = rospy.Subscriber(self.sub_topic, LanePose, self.LanePoseCallback)
 
         # ToDo: intersection
         self.sub_topic = '/{}/banana'.format(robot_name)
@@ -76,22 +75,23 @@ class ObstAvoidNode(object):
             return
         if amount_obstacles_on_track == 1:
             #ToDo: check if self.d_current can be accessed through forwarding of self
-            targets = Avoider.avoid(self, obstacle_poses_on_track, self.d_current,self.theta_current)
+            targets = self.avoider.avoid(obstacle_poses_on_track, self.d_current, self.theta_current)
             self.d_target_pub.publish(targets[0])
             self.brake_pub.publish(targets[1])
-            self.theta_target_pub.publish(targets[2])
+            # self.theta_target_pub.publish(targets[2]) # not calculated in current version
+            rospy.loginfo('d_target= %f', targets[0])
+            rospy.loginfo('emergency_stop = %f', targets[1])
             rospy.loginfo('1 obstacles on track')
         else:
             self.brake_pub.publish(1)
             rospy.loginfo('%d obstacles on track', amount_obstacles_on_track)
         return
 
-    def dCallback(self, d_update):
-        self.d_current = d_update
-        return
-
-    def thetaCallback(self, theta_update):
-        self.theta_current = theta_update
+    def LanePoseCallback(self, LanePose):
+        self.d_current = LanePose.d
+        rospy.loginfo('Current d: %f', self.d_current)
+        self.theta_current = LanePose.phi
+        rospy.loginfo('Current theta: %f', self.theta_current)
         return
 
     def intersectionCallback(self, intersection_update):
