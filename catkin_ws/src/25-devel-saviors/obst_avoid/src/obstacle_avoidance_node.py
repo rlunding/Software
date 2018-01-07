@@ -18,6 +18,9 @@ class ObstAvoidNode(object):
         self.d_current = 0
         self.theta_current = 0
         self.intersection = 0
+        self.x_bounding_width = 500  # mm
+        self.y_bounding_width = 250  # mm
+
         robot_name = rospy.get_param("~veh", "")
         self.avoider = Avoider(robot_name=robot_name)
         rospy.loginfo(robot_name)
@@ -67,8 +70,20 @@ class ObstAvoidNode(object):
         for x in range(amount_obstacles):
             rospy.loginfo(obstacle_poses.poses[x].position.z)
             if obstacle_poses.poses[x].position.z > 0:
-                obstacle_poses_on_track.poses.append(obstacle_poses.poses[x])
-                amount_obstacles_on_track+=1
+                # Bounding window
+                # get relative coordinates
+                x_obstacle = obstacle_poses.poses[x].position.x * 1000  # mm
+                y_obstacle = obstacle_poses.poses[x].position.y * 1000  # mm
+                # get global coordinates
+                global_pos_vec = self.avoider.coordinatetransform(x_obstacle, y_obstacle,
+                                                                  -self.theta_current, self.d_current)
+                x_global = global_pos_vec[0]  # mm
+                y_global = global_pos_vec[1]  # mm
+                # check if obstacle is within boundaries
+                if x_global < self.x_bounding_width and abs(y_global) < self.y_bounding_width:
+                    rospy.loginfo('Obstacle in range - Beware')
+                    obstacle_poses_on_track.poses.append(obstacle_poses.poses[x])
+                    amount_obstacles_on_track += 1
         if amount_obstacles_on_track == 0:
             self.brake_pub.publish(0)
             rospy.loginfo('0 obstacles on track')
@@ -78,7 +93,7 @@ class ObstAvoidNode(object):
             targets = self.avoider.avoid(obstacle_poses_on_track, self.d_current, self.theta_current)
             self.d_target_pub.publish(targets[0])
             self.brake_pub.publish(targets[1])
-            # self.theta_target_pub.publish(targets[2]) # not calculated in current version
+            # self.theta_target_pub.publish(targets[2]) # theta not calculated in current version
             rospy.loginfo('d_target= %f', targets[0])
             rospy.loginfo('emergency_stop = %f', targets[1])
             rospy.loginfo('1 obstacles on track')

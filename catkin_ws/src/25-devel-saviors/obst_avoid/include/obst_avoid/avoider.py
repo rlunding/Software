@@ -33,18 +33,18 @@ class Avoider():
 		# Control parameters
 		self.yAvoidanceMargin = 20  # mm
 
-	def avoid(self, obstacle_poses_on_track, d_robot, theta):
+	def avoid(self, obstacle_poses_on_track, d_current, theta):
 		self.d_target = 0
-		self.d_robot = d_robot
+		self.d_current = d_current
 		self.theta = theta
 		emergency_stop = 0
 		if len(obstacle_poses_on_track.poses) == 1:
 			# self.d_robot = self.d_current
 			# self.theta = self.theta_current
-			x_obstacle = obstacle_poses_on_track.poses[0].position.x * 1000; # mm
-			y_obstacle = obstacle_poses_on_track.poses[0].position.y * 1000; # mm
-			r_obstacle = obstacle_poses_on_track.poses[0].position.z * 1000; # mm
-			global_pos_vec = self.coordinatetransform(x_obstacle, y_obstacle, -self.theta, self.d_robot)
+			x_obstacle = obstacle_poses_on_track.poses[0].position.x * 1000 # mm
+			y_obstacle = obstacle_poses_on_track.poses[0].position.y * 1000 # mm
+			r_obstacle = obstacle_poses_on_track.poses[0].position.z * 1000 # mm
+			global_pos_vec = self.coordinatetransform(x_obstacle, y_obstacle, -self.theta, self.d_current)
 			# x_global = global_pos_vec[0]
 			y_global = global_pos_vec[1]
 			# Stop if there is no space
@@ -59,15 +59,15 @@ class Avoider():
 		targets = [self.d_target, emergency_stop]
 		return targets
 
-	def coordinatetransform(self, x_obstacle, y_obstacle, theta, d_robot):
+	def coordinatetransform(self, x_obstacle, y_obstacle, theta, d_current):
 		self.theta = theta
-		self.theta = d_robot
+		self.d_current = d_current
 		self.x_obstacle = x_obstacle
 		self.y_obstacle = y_obstacle
 		vector_local = [self.x_obstacle, self.y_obstacle]
 		rot_matrix = [[math.cos(self.theta), -math.sin(self.theta)],
 		                       [math.sin(self.theta), math.cos(self.theta)]]
-		vector_global = np.dot(rot_matrix, vector_local) + np.array([0, self.d_robot])
+		vector_global = np.dot(rot_matrix, vector_local) + np.array([0, self.d_current])
 		x_global = vector_global[0]
 		y_global = vector_global[1]
 		return np.array([x_global, y_global])
