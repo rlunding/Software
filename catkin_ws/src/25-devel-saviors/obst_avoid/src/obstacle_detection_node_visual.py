@@ -2,7 +2,7 @@
 import rospy
 from sensor_msgs.msg import CompressedImage
 from geometry_msgs.msg import PoseArray
-from visualization_msgs.msg import MarkerArray
+from visualization_msgs.msg import MarkerArray, Marker
 import message_filters
 
 ### note you need to change the name of the robot to yours here
@@ -21,7 +21,10 @@ class ObstDetectNodeVisual(object):
         self.show_marker = (rospy.get_param("~show_marker", ""))
         #self.show_marker=True
         self.show_image = (rospy.get_param("~show_image", ""))
-        #self.show_image=True
+        #bounding box parameters in mm
+        self.show_bb = (rospy.get_param("~show_bb", ""))
+        self.bb_len = (rospy.get_param("~bb_len", ""))
+        self.bb_wid = (rospy.get_param("~bb_wid", ""))
 
         # Load camera calibration parameters
 	self.intrinsics = load_camera_intrinsics(robot_name)
@@ -37,6 +40,14 @@ class ObstDetectNodeVisual(object):
                 self.pub_topic_img = '/{}/obst_detect_visual/image/compressed'.format(robot_name)
                 self.publisher_img = rospy.Publisher(self.pub_topic_img, CompressedImage, queue_size=1)
                 print "YEAH I GIVE YOU THE IMAGE"
+
+        if (self.show_bb):
+            self.pub_topic_bb_linelist = '/{}/obst_detect_visual/bb_linelist'.format(robot_name)
+            self.publisher_bblinelist = rospy.Publisher(self.pub_topic_bb_linelist, Marker, queue_size=1)
+            print "YEAH I GIVE YOU THE BOUNDINGBOXMARKERLIST"
+
+
+
 
         self.sub_topic_arr = '/{}/obst_detect/posearray'.format(robot_name)
         self.subscriber_arr = message_filters.Subscriber(self.sub_topic_arr, PoseArray)
