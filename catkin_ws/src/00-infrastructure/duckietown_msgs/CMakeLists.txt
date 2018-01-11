@@ -65,7 +65,6 @@ add_message_files(
   ObstacleImageDetectionList.msg
   ObstacleProjectedDetection.msg
   ObstacleProjectedDetectionList.msg
-  ActuatorParameters.msg
 
 )
 
