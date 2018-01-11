@@ -118,20 +118,20 @@ class LaneFilterNode(object):
         #print "Delta dmax", delta_dmax
         #print "Delta phimax", delta_phimax
         if np.median(self.phi_median) < -0.3 and np.median(self.d_median) > 0.05:
-            print "left curve"
+            # print "left curve"
             lanePose.curvature = 0.025
         elif np.median(self.phi_median) > 0.2 and np.median(self.d_median) < -0.02:
-            print "right curve"
+            # print "right curve"
             lanePose.curvature = -0.054
         else:
-            print "straight line"
+            # print "straight line"
             lanePose.curvature = 0.0
 
         # publish the belief image
         bridge = CvBridge()
         belief_img = bridge.cv2_to_imgmsg((255*self.filter.beliefArray[0]).astype('uint8'), "mono8")
         belief_img.header.stamp = segment_list_msg.header.stamp
-
+        
         self.pub_lane_pose.publish(lanePose)
         self.pub_belief_img.publish(belief_img)
 
