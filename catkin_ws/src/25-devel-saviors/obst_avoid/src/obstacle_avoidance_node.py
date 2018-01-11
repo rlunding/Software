@@ -4,17 +4,24 @@ from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import Bool
 from std_msgs.msg import Float32
 from geometry_msgs.msg import PoseArray
+<<<<<<< HEAD
 from duckietown_msgs.msg import LanePose
 
 ### note you need to change the name of the robot to yours here
 # from obst_avoid.detector import Detector
 from obst_avoid.avoider import Avoider
+=======
+
+### note you need to change the name of the robot to yours here
+# from obst_avoid.detector import Detector
+>>>>>>> devel-saviors-fabio
 from duckietown_utils import get_base_name, rgb_from_ros, rectify, load_camera_intrinsics
 
 class ObstAvoidNode(object):
 
     def __init__(self):
         self.node_name = "Obstacle Avoidance Node"
+<<<<<<< HEAD
         self.d_current = 0
         self.theta_current = 0
         self.intersection = 0
@@ -24,6 +31,14 @@ class ObstAvoidNode(object):
         robot_name = rospy.get_param("~veh", "")
         self.avoider = Avoider(robot_name=robot_name)
         rospy.loginfo(robot_name)
+=======
+        self.d_current
+        self.theta_current
+        self.intersection
+        robot_name = rospy.get_param("~robot_name", "")
+        self.avoider = Avoider(robot_name=robot_name)
+
+>>>>>>> devel-saviors-fabio
         # self.detector = Detector(robot_name=robot_name)  # not sure what that does
 
         ########################
@@ -49,11 +64,21 @@ class ObstAvoidNode(object):
         self.subscriber = rospy.Subscriber(self.sub_topic, PoseArray, self.obstacleCallback)
 
         # ToDo: d_current, theta_current
+<<<<<<< HEAD
         self.sub_topic = '/{}/lane_filter_node/lane_pose/'.format(robot_name)
         self.subscriber = rospy.Subscriber(self.sub_topic, LanePose, self.LanePoseCallback)
 
         # ToDo: intersection
         self.sub_topic = '/{}/banana'.format(robot_name)
+=======
+        self.sub_topic = '/{}/localization_node/'.format(robot_name)
+        self.subscriber = rospy.Subscriber(self.sub_topic, CompressedImage, self.dCallback)
+        self.sub_topic = '/{}/localization_node/'.format(robot_name)
+        self.subscriber = rospy.Subscriber(self.sub_topic, CompressedImage, self.thetaCallback)
+
+        # ToDo: intersection
+        self.sub_topic = '/{}/'.format(robot_name)
+>>>>>>> devel-saviors-fabio
         self.subscriber = rospy.Subscriber(self.sub_topic, CompressedImage, self.intersectionCallback)
 
         # ToDo: line_detection
@@ -61,6 +86,7 @@ class ObstAvoidNode(object):
         self.subscriber = rospy.Subscriber(self.sub_topic, CompressedImage, self.lineCallback)
 
     def obstacleCallback(self, obstacle_poses):
+<<<<<<< HEAD
         amount_obstacles = len(obstacle_poses.poses)
         amount_obstacles_on_track = 0
         rospy.loginfo('Number of obstacles: %d', len(obstacle_poses.poses))
@@ -107,6 +133,36 @@ class ObstAvoidNode(object):
         rospy.loginfo('Current d: %f', self.d_current)
         self.theta_current = LanePose.phi
         rospy.loginfo('Current theta: %f', self.theta_current)
+=======
+        amount_obstacles = len(obstacle_poses)
+        amount_obstacles_on_track = 0
+        rospy.loginfo('Callbakkkk')
+        amount_obstacles_on_track = 0
+        obstacle_poses_on_track = []
+        for x in range(0, amount_obstacles, 1):
+            if obstacle_poses[0].pose.z > 0:
+                obstacle_poses_on_track[amount_obstacles_on_track] = obstacle_poses[x]
+                amount_obstacles_on_track+=1
+        if amount_obstacles_on_track = 0:
+            self.brake_pub.publish(0)
+            return
+        if amount_obstacles_on_track = 1:
+            #ToDo: check if self.d_current can be accessed through forwarding of self
+            targets = avoid(self, obstacle_poses_on_track) #,self.d_current,self.theta_current)
+            self.d_target_pub.publish(targets[0])
+            self.brake_pub.publish(targets[1])
+            self.theta_target_pub.publish(targets[2])
+        else:
+            self.brake_pub.publish(1)
+        return
+
+    def dCallback(self, d_update):
+        self.d_current = d_update
+        return
+
+    def thetaCallback(self, theta_update):
+        self.theta_current = theta_update
+>>>>>>> devel-saviors-fabio
         return
 
     def intersectionCallback(self, intersection_update):

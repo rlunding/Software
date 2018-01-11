@@ -20,10 +20,10 @@ from duckietown_utils import get_base_name, load_camera_intrinsics, load_homogra
 from duckietown_utils import load_map, load_camera_intrinsics, load_homography, rectify
 
 class Detector():
-    '''class for detecting obstacles'''
-    def __init__(self, robot_name=''):
-        # Robot name
-    	self.robot_name = robot_name
+	'''class for detecting obstacles'''
+	def __init__(self, robot_name=''):
+		# Robot name
+		self.robot_name = robot_name
 
     	# Array which safes known obstacles to track them better 
     	self.track_array = np.int_([])
@@ -116,7 +116,7 @@ class Detector():
 	return obst_list
 
 
-    def segment_img(self, image):
+	def segment_img(self, image):
 		#returns segmented image on Grayscale where all interconnected pixels have same number
 		return measure.label(image)
 
