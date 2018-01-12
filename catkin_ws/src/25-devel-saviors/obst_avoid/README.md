@@ -85,8 +85,8 @@ after having created this bag containing the corrected images, we have to extrac
 !END OF COMMAND!
 where the first argument is the path to the previously created bagfile, the second is the topic of interes which we want to transform into an image and the third one is the path to a directory which will be created in order to store the pictures in it!!!
 
-Now, that we have all the pictures we can finally tune our code using two jupyter notebook files. The first one color_thresholds let you load some image and shows what would have been detected as yellow, white and orange.
-The second script detector_eval lets you evaluate the overall perfomance on your code by loading all of the pictures in one folder, applying the detector on them, drawing all of the bounding boxes and storing the finally created pictures!! execute here the .py script and not the jupyter notebook file -> type ./dt-detector_eval.py (!this needs also a roscore started in another terminal!)
+Now, that we have all the pictures we can finally tune our code using one jupyter notebook file and another python script. The jupyter notebook file color_thresholds lets you load some image and shows what would have been detected as yellow, white and orange. So it is basically a visualisation of the output of our designed image filters.
+The second, python script detector_eval lets you evaluate the overall perfomance on your code by loading all of the pictures in one folder, applying the detector on them, drawing all of the bounding boxes and storing the finally created CROPPED pictures!! So it is on the one hand a good mean to show whether the right objects are detected and on the other hand can be used very easily to check if your homography is correct since it also reveals where the image was cropped! execute here the .py script and not the jupyter notebook file -> type ./dt-detector_eval.py (!this needs also a roscore started in another terminal!)
 
 A third script is provided which can be used to decode an .csv file of thehive.ai.
 
