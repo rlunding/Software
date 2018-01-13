@@ -37,11 +37,11 @@ class ObstAvoidNode(object):
 
         ########################
         ###### Subscribers #####
-        self.sub_topic = '/{}/obst_detect/posearray'.format(self.robot_name)
+        self.sub_topic = '/{}/obst_detect/posearray'.format(robot_name)
         self.subscriber = rospy.Subscriber(self.sub_topic, PoseArray, self.obstacleCallback)
 
         # ToDo: d_current, theta_current
-        self.sub_topic = '/{}/lane_filter_node/lane_pose/'.format(self.robot_name)
+        self.sub_topic = '/{}/lane_filter_node/lane_pose/'.format(robot_name)
         self.subscriber = rospy.Subscriber(self.sub_topic, LanePose, self.LanePoseCallback)
 
         # ToDo: intersection
@@ -57,7 +57,6 @@ class ObstAvoidNode(object):
         avoidance_active = BoolStamped()
         avoidance_active.data = False
         target = LanePose()
-        # target.header.frame_id = self.robot_name
         target.v_ref = 10  # max speed high, current top 0.38
         for x in range(amount_obstacles):
             # rospy.loginfo(obstacle_poses.poses[x].position.z)
