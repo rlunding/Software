@@ -56,7 +56,7 @@ class ObstDetectNodeVisual(object):
         self.bbmarker.type = Marker.LINE_STRIP
         self.bbmarker.lifetime = rospy.Time(10.0)
         self.bbmarker.pose.orientation.w = 1.0
-        self.bbmarker.scale.x = 0.1
+        self.bbmarker.scale.x = 0.02
         self.bbmarker.color.b = 1.0 #blue
         self.bbmarker.color.a = 1.0 #alpha
 
@@ -64,16 +64,14 @@ class ObstDetectNodeVisual(object):
         corner2 = Point()
         corner3 = Point()
         corner4 = Point()
-        corner1.x = -self.bb_wid/2000
-        corner1.y = 0
-        print corner1.x
-        print corner1.y
-        corner2.x = -self.bb_wid/2000
-        corner2.y = self.bb_len/1000
-        corner3.x = self.bb_wid/2000
-        corner3.y = self.bb_len/1000
-        corner4.x = self.bb_wid/2000
-        corner4.y = 0
+        corner1.y = -self.bb_wid/2000
+        corner1.x = 0
+        corner2.y = -self.bb_wid/2000
+        corner2.x = self.bb_len/1000
+        corner3.y = self.bb_wid/2000
+        corner3.x = self.bb_len/1000
+        corner4.y = self.bb_wid/2000
+        corner4.x = 0
 
         self.bbmarker.points.append(corner1)
         self.bbmarker.points.append(corner2)
