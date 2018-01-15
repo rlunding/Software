@@ -162,6 +162,9 @@ class ImageTransformerNode():
         # store transform to the Anti-Instagram instance
         self.ai.shift = trafo_msg.s[0:3]         #copied from line_detector2 ldn.py
         self.ai.scale = trafo_msg.s[3:6]
+        if (abs(self.ai.shift[0]-0)>0.2):
+            rospy.logwarn('!!!!!!!!!!!!!!!!!!!!TRAFO WAS COMPUTED SO WE ARE READY TO GO!!!!!!!!!!!!')
+
 
     def cbNewTrafo_CB(self, th_msg):
         # print('image transformer: received new Color Balance trafo!')
