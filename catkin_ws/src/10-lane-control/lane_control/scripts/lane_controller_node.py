@@ -4,10 +4,15 @@ import math
 import numpy as np
 from duckietown_msgs.msg import Twist2DStamped, LanePose, WheelsCmdStamped, BoolStamped, FSMState
 import time
-
+import imp
+import os
 
 class lane_controller(object):
     def __init__(self):
+        duckietown_root = os.environ['DUCKIETOWN_ROOT']
+        abc = imp.load_source('module.name', duckietown_root + '/CSII/Exercises/HWExercise1/DT-PI-controller.py')
+        self.PI_class = abc.PI_controller()
+
         self.node_name = rospy.get_name()
         self.lane_reading = None
         self.last_ms = None
@@ -24,14 +29,14 @@ class lane_controller(object):
         # Subscriptions
         self.sub_lane_reading = rospy.Subscriber("~lane_pose", LanePose, self.PoseHandling, "lane_filter", queue_size=1)
         # self.sub_lane_reading = rospy.Subscriber("~lane_pose", LanePose, self.cbPose, queue_size=1)
-        
+
         #TO DO find node/topic in their branch
         self.sub_obstacle_avoidance_pose = rospy.Subscriber("~obstacle_avoidance_pose", LanePose, self.PoseHandling, "obstacle_avoidance",queue_size=1)
         self.sub_obstacle_detected = rospy.Subscriber("~obstacle_detected", BoolStamped, self.setFlag, "obstacle_detected", queue_size=1)
-        
+
         #TO DO find node/topic in their branch
         # self.sub_intersection_navigation_pose = rospy.Subscriber("~intersection_navigation_pose", LanePose, self.PoseHandling, "intersection_navigation",queue_size=1)   # TODO: remap topic in file catkin_ws/src/70-convenience-packages/duckietown_demos/launch/master.launch !
-        
+
         #TO DO find node/topic in their branch
         # self.sub_parking_pose = rospy.Subscriber("~parking_pose", LanePose, self.PoseHandling, "parking",queue_size=1)   # TODO: remap topic in file catkin_ws/src/70-convenience-packages/duckietown_demos/launch/master.launch !
 
@@ -46,7 +51,7 @@ class lane_controller(object):
         self.sub_wheels_cmd_executed = rospy.Subscriber("~wheels_cmd_executed", WheelsCmdStamped, self.updateWheelsCmdExecuted, queue_size=1)
         self.sub_actuator_limits = rospy.Subscriber("~actuator_limits", Twist2DStamped, self.updateActuatorLimits, queue_size=1)
 
-        # FSM 
+        # FSM
         self.sub_switch = rospy.Subscriber("~switch",BoolStamped, self.cbSwitch,  queue_size=1)     # for this topic, no remapping is required, since it is directly defined in the namespace lane_controller_node by the fsm_node (via it's default.yaml file)
         self.sub_fsm_mode = rospy.Subscriber("~fsm_mode", FSMState, self.cbMode, queue_size=1)
 
@@ -67,7 +72,7 @@ class lane_controller(object):
         rospy.set_param(param_name,value) # Write to parameter server for transparancy
         rospy.loginfo("[%s] %s = %s " %(self.node_name,param_name,value))
         return value
-    
+
 
     def setGains(self):
         v_bar_fallback = 0.5 # nominal speed, 0.5m/s
@@ -185,8 +190,8 @@ class lane_controller(object):
 
     def setFlag(self, msg_flag, flag_name):
         self.flag_dict[flag_name] = msg_flag.data
-        
-    
+
+
     def PoseHandling(self, input_pose_msg, pose_source):
         if not self.active:
             return
@@ -280,6 +285,38 @@ class lane_controller(object):
         # delay from taking the image until now in seconds
         image_delay = image_delay_stamp.secs + image_delay_stamp.nsecs/1e9
 
+
+
+        # EXERCISE 1 PI-CONTROL
+        if True:
+            d_est = pose_msg.d
+            phi_est = pose_msg.phi
+            d_ref = 0
+            v_ref = pose_msg.v_ref
+            t_delay = image_delay
+
+            currentMillis = int(round(time.time() * 1000))
+            if self.last_ms is not None:
+                dt_last = (currentMillis - self.last_ms) / 1000.0
+            else:
+                dt_last = None
+
+
+            # Obtain new v and omega
+            v_out, omega_out = self.PI_class.getControlOutput(d_est, phi_est, d_ref, v_ref, t_delay, dt_last)
+
+            rospy.loginfo("Omega: " + str(omega_out))
+            rospy.loginfo("V: " + str(v_out))
+            # Create message and publish
+            car_control_msg = Twist2DStamped()
+            car_control_msg.header = pose_msg.header
+            car_control_msg.v = v_out
+            car_control_msg.omega = omega_out
+            self.publishCmd(car_control_msg)
+            self.last_ms = currentMillis
+
+            return
+
         prev_cross_track_err = self.cross_track_err
         prev_heading_err = self.heading_err
         self.cross_track_err = pose_msg.d - self.d_offset
@@ -335,7 +372,7 @@ class lane_controller(object):
         self.omega_max = min(self.actuator_limits.omega, self.omega_max_radius_limitation)
 
         if math.fabs(omega) > self.omega_max:
-            if self.last_ms is not None: 
+            if self.last_ms is not None:
                 self.cross_track_integral -= self.cross_track_err * dt
                 self.heading_integral -= self.heading_err * dt
             car_control_msg.omega = self.omega_max * np.sign(omega)
