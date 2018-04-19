@@ -8,6 +8,7 @@ class WheelsDriverNode(object):
         self.node_name = rospy.get_name()
         rospy.loginfo("[%s] Initializing " %(self.node_name))
         self.estop=False
+        self.estop_stamp = rospy.get_rostime()
 
         # Setup publishers
         self.driver = DaguWheelsDriver()
@@ -39,12 +40,16 @@ class WheelsDriverNode(object):
         self.msg_wheels_cmd.vel_right = msg.vel_right
         self.pub_wheels_cmd.publish(self.msg_wheels_cmd)
 
-    def cbEStop(self,msg):
-        self.estop=not self.estop
+    def cbEStop(self, msg):
+        if msg.header.stamp < self.estop_stamp + 1:
+            return
+
+        self.estop = not self.estop
+        self.estop_stamp = msg.header.stamp
         if self.estop:
-            rospy.loginfo("[%s] Emergency Stop Activated")
+            rospy.loginfo("[%s] Emergency Stop Activated" % self.node_name)
         else:
-            rospy.loginfo("[%s] Emergency Stop Released")
+            rospy.loginfo("[%s] Emergency Stop Released" % self.node_name)
 
     def on_shutdown(self):
         self.driver.setWheelsSpeed(left=0.0,right=0.0)
