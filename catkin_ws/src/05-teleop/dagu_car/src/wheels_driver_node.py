@@ -41,7 +41,7 @@ class WheelsDriverNode(object):
         self.pub_wheels_cmd.publish(self.msg_wheels_cmd)
 
     def cbEStop(self, msg):
-        if msg.header.stamp < self.estop_stamp + 1:
+        if msg.header.stamp < self.estop_stamp + rospy.Duration(1):
             return
 
         self.estop = not self.estop
