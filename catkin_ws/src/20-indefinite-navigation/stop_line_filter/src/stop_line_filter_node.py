@@ -97,19 +97,6 @@ class StopLineFilterNode(object):
             else:
                 points = np.vstack([points, p1_lane, p2_lane])
 
-        # Publish visualization
-        marker_array = MarkerArray()
-        tree = cKDTree(points)
-        groups = self.make_equiv_classes(tree.query_pairs(r=self.seg_distance))
-        for group in groups:
-            points_in_group = points[list(group)]
-            mean = points_in_group.mean(axis=0)
-            lamdba_, v = np.linalg.eig(np.cov(points_in_group.T))
-            angle = np.arccos(v[0, 0]) + np.pi/2
-
-            marker_array.markers.append(self.stop_line_to_marker(mean[0], mean[1], angle))
-        self.pub_stop_line_point.publish(marker_array)
-
         stop_line_reading_msg = StopLineReading()
         stop_line_reading_msg.header.stamp = segment_list_msg.header.stamp
         if (good_seg_count < self.min_segs):
@@ -126,6 +113,29 @@ class StopLineFilterNode(object):
         stop_line_reading_msg.stop_line_point = stop_line_point
         stop_line_reading_msg.at_stop_line = stop_line_point.x < self.stop_distance and math.fabs(stop_line_point.y) < 0.5
         self.pub_stop_line_reading.publish(stop_line_reading_msg)
+
+        # Publish visualization
+        marker_array = MarkerArray()
+        tree = cKDTree(points)
+        groups = self.make_equiv_classes(tree.query_pairs(r=self.seg_distance))
+        for group in groups:
+            points_in_group = points[list(group)]
+            if points_in_group < self.min_segs:
+                continue
+            mean = points_in_group.mean(axis=0)
+            lamdba_, v = np.linalg.eig(np.cov(points_in_group.T))
+            angle = np.arccos(v[0, 0]) + np.pi / 2
+
+            marker_array.markers.append(self.stop_line_to_marker(mean[0], mean[1], angle))
+
+        rospy.loginfo("[%s] %s groups found. Markers: %s" %
+                      (self.node_name, len(groups), len(marker_array.markers)))
+        marker_id = 0
+        for m in marker_array.markers:
+            m.id = marker_id
+            marker_id += 1
+        self.pub_stop_line_point.publish(marker_array)
+
         if stop_line_reading_msg.at_stop_line:
             msg = BoolStamped()
             msg.header.stamp = stop_line_reading_msg.header.stamp
