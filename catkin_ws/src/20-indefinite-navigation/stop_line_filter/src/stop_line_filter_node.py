@@ -19,7 +19,7 @@ class StopLineFilterNode(object):
 
         ## params
         self.stop_distance = self.setupParam("~stop_distance", 0.25) # distance from the stop line that we should stop
-        self.min_segs      = self.setupParam("~min_segs", 6) # minimum number of red segments that we should detect to estimate a stop
+        self.min_segs      = self.setupParam("~min_segs", 3) # minimum number of red segments that we should detect to estimate a stop
         self.off_time      = self.setupParam("~off_time", 2)
         self.seg_distance = self.setupParam("~seg_distance", 0.10)
         self.stop_distance_y = self.setupParam("~stop_distance_y", 0.20)
@@ -96,7 +96,7 @@ class StopLineFilterNode(object):
         stop_line_reading_msg.stop_line_detected = False
         stop_line_reading_msg.at_stop_line = False
 
-        if points.shape[0] < self.min_segs:
+        if points is None or points.shape[0] < self.min_segs * 2:
             self.pub_stop_line_reading.publish(stop_line_reading_msg)
             return
 
@@ -107,9 +107,9 @@ class StopLineFilterNode(object):
 
         for group in groups:
             points_in_group = points[list(group)]
-            if points_in_group.shape[0] < self.min_segs:
+            if points_in_group.shape[0] < self.min_segs * 2:
                 continue
-            mean = self.to_body_frame(points_in_group.mean(axis=0))
+            mean = points_in_group.mean(axis=0)
             at_stop_line = mean[0] < self.stop_distance and math.fabs(mean[1]) < self.stop_distance_y
             lamdba_, v = np.linalg.eig(np.cov(points_in_group.T))
             angle = np.arccos(v[0, 0]) + np.pi / 2
