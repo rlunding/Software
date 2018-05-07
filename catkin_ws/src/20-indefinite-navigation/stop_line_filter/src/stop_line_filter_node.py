@@ -19,9 +19,9 @@ class StopLineFilterNode(object):
 
         ## params
         self.stop_distance = self.setupParam("~stop_distance", 0.25) # distance from the stop line that we should stop
-        self.min_segs      = self.setupParam("~min_segs", 2) # minimum number of red segments that we should detect to estimate a stop
+        self.min_segs      = self.setupParam("~min_segs", 6) # minimum number of red segments that we should detect to estimate a stop
         self.off_time      = self.setupParam("~off_time", 2)
-        self.seg_distance = self.setupParam("~seg_distance", 0.1)
+        self.seg_distance = self.setupParam("~seg_distance", 0.25)
 
         self.state = "JOYSTICK_CONTROL"
         self.sleep = False
@@ -120,9 +120,9 @@ class StopLineFilterNode(object):
         groups = self.make_equiv_classes(tree.query_pairs(r=self.seg_distance))
         for group in groups:
             points_in_group = points[list(group)]
-            if points_in_group < self.min_segs:
+            if points_in_group.shape[0] < self.min_segs:
                 continue
-            mean = points_in_group.mean(axis=0)
+            mean = self.to_body_frame(points_in_group.mean(axis=0))
             lamdba_, v = np.linalg.eig(np.cov(points_in_group.T))
             angle = np.arccos(v[0, 0]) + np.pi / 2
 
@@ -153,6 +153,17 @@ class StopLineFilterNode(object):
         p_new = p_new_homo[0:2]
         return p_new
 
+    def to_body_frame(self, point):
+        p_homo = np.array([point.x, point.y, 1])
+        phi = self.lane_pose.phi
+        d = self.lane_pose.d
+        t = np.array([[math.cos(phi), math.sin(phi), -d * math.sin(phi)],
+                      [-math.sin(phi), math.cos(phi), -d * math.cos(phi)],
+                      [0,0,1]])
+        p_new_homo = t.dot(p_homo)
+        p_new = p_new_homo[0:2]
+        return p_new
+
     def stop_line_to_marker(self, x, y, angle):
         marker = Marker()
         marker.header.frame_id = "duplo"
@@ -175,8 +186,12 @@ class StopLineFilterNode(object):
         marker.scale.y = 0.01
         marker.scale.z = 0.1
 
-        marker.color.r = 1.0
-        marker.color.g = 0.0
+        if x < self.stop_distance and math.fabs(y) < 0.5:
+            marker.color.r = 1.0
+            marker.color.g = 0.0
+        else:
+            marker.color.r = 0.0
+            marker.color.g = 1.0
         marker.color.b = 0.0
         marker.color.a = 1
 
