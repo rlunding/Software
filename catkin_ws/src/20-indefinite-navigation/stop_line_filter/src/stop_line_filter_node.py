@@ -14,23 +14,24 @@ class StopLineFilterNode(object):
     def __init__(self):
         self.node_name = "Stop Line Filter"
         self.active = True
-        ## state vars
+        # state vars
         self.lane_pose = LanePose()
 
-        ## params
+        # params
         self.stop_distance = self.setupParam("~stop_distance", 0.25) # distance from the stop line that we should stop
-        self.min_segs      = self.setupParam("~min_segs", 3) # minimum number of red segments that we should detect to estimate a stop
-        self.off_time      = self.setupParam("~off_time", 2)
-        self.seg_distance = self.setupParam("~seg_distance", 0.10)
-        self.stop_distance_y = self.setupParam("~stop_distance_y", 0.20)
+        self.stop_distance_y = self.setupParam("~stop_distance_y", 0.10) # distance from the stop line that we should stop
+        self.min_segs = self.setupParam("~min_segs", 3) # minimum number of red segments that we should detect to estimate a stop
+        self.off_time = self.setupParam("~off_time", 2)
+        self.point_distance = self.setupParam("~point_distance", 0.10) # distance between points
+
 
         self.state = "JOYSTICK_CONTROL"
         self.sleep = False
 
-        ## publishers and subscribers
-        self.sub_segs      = rospy.Subscriber("~segment_list", SegmentList, self.processSegments)
-        self.sub_lane      = rospy.Subscriber("~lane_pose",LanePose, self.processLanePose)
-        self.sub_mode      = rospy.Subscriber("fsm_node/mode",FSMState, self.processStateChange)
+        # publishers and subscribers
+        self.sub_segs = rospy.Subscriber("~segment_list", SegmentList, self.processSegments)
+        self.sub_lane = rospy.Subscriber("~lane_pose",LanePose, self.processLanePose)
+        self.sub_mode = rospy.Subscriber("fsm_node/mode",FSMState, self.processStateChange)
         self.pub_stop_line_reading = rospy.Publisher("~stop_line_reading", StopLineReading, queue_size=1)
         self.pub_stop_line_point = rospy.Publisher("~stop_line_point", MarkerArray, queue_size=1)
         self.pub_at_stop_line = rospy.Publisher("~at_stop_line", BoolStamped, queue_size=1)
@@ -47,10 +48,10 @@ class StopLineFilterNode(object):
 
     def updateParams(self,event):
         self.stop_distance = rospy.get_param("~stop_distance")
+        self.stop_distance_y = rospy.get_param("~stop_distance_y")
         self.min_segs      = rospy.get_param("~min_segs")
         self.off_time      = rospy.get_param("~off_time")
-        self.seg_distance  = rospy.get_param("~seg_distance")
-        self.stop_distance_y = rospy.get_param("~stop_distance_y")
+        self.point_distance  = rospy.get_param("~point_distance")
 
     def processStateChange(self, msg):
         if self.state == "INTERSECTION_CONTROL" and (msg.state == "LANE_FOLLOWING" or msg.state == "PARALLEL_AUTONOMY"):
@@ -76,11 +77,12 @@ class StopLineFilterNode(object):
         if not self.active or self.sleep:
             return
 
+        # Get all red points (one red segment is two points)
         points = None
         for segment in segment_list_msg.segments:
             if segment.color != segment.RED:
                 continue
-            if segment.points[0].x < 0 or segment.points[1].x < 0: # the point is behind us
+            if segment.points[0].x < 0 or segment.points[1].x < 0:  # the point is behind us
                 continue
 
             p1_lane = self.to_lane_frame(segment.points[0])
@@ -96,25 +98,22 @@ class StopLineFilterNode(object):
         stop_line_reading_msg.stop_line_detected = False
         stop_line_reading_msg.at_stop_line = False
 
+        # Exit if not enough red segments was found
         if points is None or points.shape[0] < self.min_segs * 2:
             self.pub_stop_line_reading.publish(stop_line_reading_msg)
             return
 
-        # Publish visualization
+        # Prepare visualization
         marker_array = MarkerArray()
+        # Find groups of points, i.e. multiple stop line candidates
         tree = cKDTree(points)
-        groups = self.make_equiv_classes(tree.query_pairs(r=self.seg_distance))
-
+        groups = self.make_equiv_classes(tree.query_pairs(r=self.point_distance))
         for group in groups:
             points_in_group = points[list(group)]
-            if points_in_group.shape[0] < self.min_segs * 2:
+            if points_in_group.shape[0] < self.min_segs * 2:  # ensure enough points in group
                 continue
             mean = points_in_group.mean(axis=0)
             at_stop_line = mean[0] < self.stop_distance and math.fabs(mean[1]) < self.stop_distance_y
-            lamdba_, v = np.linalg.eig(np.cov(points_in_group.T))
-            angle = np.arccos(v[0, 0]) + np.pi / 2
-            marker_array.markers.append(self.stop_line_to_marker(self.to_body_frame(mean), angle, at_stop_line))
-
             if at_stop_line:
                 stop_line_reading_msg.stop_line_detected = True
                 stop_line_point = Point()
@@ -123,8 +122,12 @@ class StopLineFilterNode(object):
                 stop_line_reading_msg.stop_line_point = stop_line_point
                 stop_line_reading_msg.at_stop_line = True
 
-        self.pub_stop_line_reading.publish(stop_line_reading_msg)
+            # Add visualization marker
+            lamdba_, v = np.linalg.eig(np.cov(points_in_group.T))
+            angle = np.arccos(v[0, 0]) + np.pi / 2
+            marker_array.markers.append(self.stop_line_to_marker(mean, angle, at_stop_line))
 
+        # Set IDs and publish markers
         marker_id = 0
         for m in marker_array.markers:
             m.id = marker_id
@@ -137,6 +140,8 @@ class StopLineFilterNode(object):
             msg.data = True
             self.pub_at_stop_line.publish(msg)
 
+        self.pub_stop_line_reading.publish(stop_line_reading_msg)
+
     def to_lane_frame(self, point):
         p_homo = np.array([point.x,point.y,1])
         phi = self.lane_pose.phi
@@ -145,17 +150,6 @@ class StopLineFilterNode(object):
                       [math.sin(phi), math.cos(phi) , d],
                       [0,0,1]])
         p_new_homo = T.dot(p_homo)
-        p_new = p_new_homo[0:2]
-        return p_new
-
-    def to_body_frame(self, point):
-        p_homo = np.array([point[0], point[0], 1])
-        phi = self.lane_pose.phi
-        d = self.lane_pose.d
-        t = np.array([[math.cos(phi), math.sin(phi), -d * math.sin(phi)],
-                      [-math.sin(phi), math.cos(phi), -d * math.cos(phi)],
-                      [0,0,1]])
-        p_new_homo = t.dot(p_homo)
         p_new = p_new_homo[0:2]
         return p_new
 
@@ -204,6 +198,7 @@ class StopLineFilterNode(object):
 
     def onShutdown(self):
         rospy.loginfo("[StopLineFilterNode] Shutdown.")
+
 
 if __name__ == '__main__':
     rospy.init_node('stop_line_filter',anonymous=False)

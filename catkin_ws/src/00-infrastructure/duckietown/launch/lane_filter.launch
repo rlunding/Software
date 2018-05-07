@@ -41,8 +41,5 @@
 	<include file="$(find lane_filter)/launch/lane_pose_visualizer_node.launch">
 	    <arg name="veh" value="$(arg veh)"/>		
 	</include>
-	<include file="$(find stop_line_filter)/launch/stop_line_pose_visualizer_node.launch">
-	    <arg name="veh" value="$(arg veh)"/>
-	</include>
 
 </launch>	
