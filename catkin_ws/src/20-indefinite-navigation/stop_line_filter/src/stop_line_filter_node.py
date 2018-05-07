@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import rospy
+import tf
 import numpy as np
 from duckietown_msgs.msg import SegmentList, Segment, BoolStamped, StopLineReading, LanePose, FSMState
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Point
 import time
 import math
-from visualization_msgs.msg import Marker, MarkerArray
+from visualization_msgs.msg import Marker
 
 class StopLineFilterNode(object):
     def __init__(self):
@@ -28,7 +29,7 @@ class StopLineFilterNode(object):
         self.sub_lane      = rospy.Subscriber("~lane_pose",LanePose, self.processLanePose)
         self.sub_mode      = rospy.Subscriber("fsm_node/mode",FSMState, self.processStateChange)
         self.pub_stop_line_reading = rospy.Publisher("~stop_line_reading", StopLineReading, queue_size=1)
-        self.pub_stop_line_point = rospy.Publisher("~stop_line_point", MarkerArray, queue_size=1)
+        self.pub_stop_line_point = rospy.Publisher("~stop_line_point", Marker, queue_size=1)
         self.pub_at_stop_line = rospy.Publisher("~at_stop_line", BoolStamped, queue_size=1)
 
         self.sub_switch = rospy.Subscriber("~switch",BoolStamped, self.cbSwitch)
@@ -73,6 +74,8 @@ class StopLineFilterNode(object):
         good_seg_count=0
         stop_line_x_accumulator=0.0
         stop_line_y_accumulator=0.0
+
+        p = None
         for segment in segment_list_msg.segments:
             if segment.color != segment.RED:
                 continue
@@ -87,6 +90,12 @@ class StopLineFilterNode(object):
             stop_line_y_accumulator += avg_y # TODO output covariance and not just mean
             good_seg_count += 1.0
 
+            if p is None:
+                p = np.vstack([p1_lane, p2_lane])
+            else:
+                p = np.vstack([p, p1_lane, p2_lane])
+
+
         stop_line_reading_msg = StopLineReading()
         stop_line_reading_msg.header.stamp = segment_list_msg.header.stamp
         if (good_seg_count < self.min_segs):
@@ -97,12 +106,16 @@ class StopLineFilterNode(object):
 
         stop_line_reading_msg.stop_line_detected = True
         stop_line_point = Point()
-        stop_line_point.x = stop_line_x_accumulator/good_seg_count
-        stop_line_point.y = stop_line_y_accumulator/good_seg_count
+        p_mean = p.mean(axis=0)
+        stop_line_point.x = p_mean[0]  # stop_line_x_accumulator/good_seg_count
+        stop_line_point.y = p_mean[1]  # stop_line_y_accumulator/good_seg_count
         stop_line_reading_msg.stop_line_point = stop_line_point
         stop_line_reading_msg.at_stop_line = stop_line_point.x < self.stop_distance and math.fabs(stop_line_point.y) < 0.5
         self.pub_stop_line_reading.publish(stop_line_reading_msg)
-        self.pub_stop_line_point(self.stop_line_to_marker(stop_line_reading_msg))
+
+        lamdba_, v = np.linalg.eig(np.cov(p.T))
+        angle = np.arccos(v[0, 0])
+        self.pub_stop_line_point.publish(self.stop_line_to_marker(stop_line_reading_msg, angle))
         if stop_line_reading_msg.at_stop_line:
             msg = BoolStamped()
             msg.header.stamp = stop_line_reading_msg.header.stamp
@@ -120,24 +133,30 @@ class StopLineFilterNode(object):
         p_new = p_new_homo[0:2]
         return p_new
 
-    def stop_line_to_marker(self, stop_line_reading_msg):
-        marker_array = MarkerArray()
+    def stop_line_to_marker(self, stop_line_reading_msg, angle):
         marker = Marker()
         marker.header.frame_id = "duplo"
         marker.header.stamp = stop_line_reading_msg.header.stamp
-        marker.type = Marker.SPHERE
+        marker.type = Marker.CUBE
         marker.action = Marker.ADD
-        marker.scale.x = 0.2
-        marker.scale.y = 0.2
-        marker.scale.z = 0.2
-        marker.color.a = 1
-        marker.pose.orientation.w = 1.0
+
+        yaw_quat = tf.transformations.quaternion_about_axis(-angle, [0, 0, 1])
+        marker.pose.orientation.x = yaw_quat[0]
+        marker.pose.orientation.y = yaw_quat[1]
+        marker.pose.orientation.z = yaw_quat[2]
+        marker.pose.orientation.w = yaw_quat[3]
+
         marker.pose.position.x = stop_line_reading_msg.stop_line_point.x
         marker.pose.position.y = stop_line_reading_msg.stop_line_point.y
-        marker.pose.position.z = 0.01
+        marker.pose.position.z = 0.1
 
-        marker_array.markers.append(marker)
-        return marker_array
+        marker.scale.x = 0.3
+        marker.scale.y = 0.01
+        marker.scale.z = 0.1
+
+        marker.color.a = 1
+
+        return marker
 
     def onShutdown(self):
         rospy.loginfo("[StopLineFilterNode] Shutdown.")
