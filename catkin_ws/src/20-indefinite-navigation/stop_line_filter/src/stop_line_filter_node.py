@@ -106,7 +106,7 @@ class StopLineFilterNode(object):
         stop_line_reading_msg.at_stop_line = False
 
         # Exit if not enough red segments was found
-        if points is None or points.shape[0] < self.min_segs * 2:
+        if points is None or points.shape[0] <= self.min_segs * 2:
             self.pub_stop_line_reading.publish(stop_line_reading_msg)
             return
 
@@ -117,7 +117,7 @@ class StopLineFilterNode(object):
         groups = self.make_equiv_classes(tree.query_pairs(r=self.point_distance))
         for group in groups:
             points_in_group = points[list(group)]
-            if points_in_group.shape[0] < self.min_segs * 2:  # ensure enough points in group
+            if points_in_group.shape[0] <= self.min_segs * 2:  # ensure enough points in group
                 continue
             mean = points_in_group.mean(axis=0)
             at_stop_line = mean[0] < self.stop_distance and math.fabs(mean[1]) < self.stop_distance_y
@@ -178,13 +178,9 @@ class StopLineFilterNode(object):
 
         marker.pose.position.x = point[0]
         marker.pose.position.y = point[1]
-        marker.pose.position.z = 0.1
+        marker.pose.position.z = 0.01
 
-        marker.scale.x = marker.scale.y = marker.scale.z = 1
-        # marker.scale.x = 0.3
-        # marker.scale.y = 0.01
-        # marker.scale.z = 0.1
-        
+        marker.scale.x = marker.scale.y = marker.scale.z = 0.003
 
         if at_stop_line:
             marker.color.r = 1.0
