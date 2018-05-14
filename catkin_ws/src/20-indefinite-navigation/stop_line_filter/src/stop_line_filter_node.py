@@ -12,51 +12,58 @@ from visualization_msgs.msg import Marker, MarkerArray
 
 class StopLineFilterNode(object):
     def __init__(self):
-        self.node_name = "Stop Line Filter"
-        self.active = True
+        self.node_name = rospy.get_name()
+        rospy.loginfo("[%s] Initializing " % self.node_name)
+
+        # Get vehicle name from namespace
+        self.veh_name = rospy.get_namespace().strip("/")
+        rospy.loginfo("[%s] Vehicle name: %s" % (self.node_name, self.veh_name))
+
         # state vars
         self.lane_pose = LanePose()
-
-        # params
-        self.stop_distance = self.setupParam("~stop_distance", 0.25) # distance from the stop line that we should stop
-        self.stop_distance_y = self.setupParam("~stop_distance_y", 0.10) # distance from the stop line that we should stop
-        self.min_segs = self.setupParam("~min_segs", 3) # minimum number of red segments that we should detect to estimate a stop
-        self.off_time = self.setupParam("~off_time", 2)
-        self.point_distance = self.setupParam("~point_distance", 0.10) # distance between points
-
-
         self.state = "JOYSTICK_CONTROL"
         self.sleep = False
+        self.active = True
 
-        # publishers and subscribers
-        self.sub_segs = rospy.Subscriber("~segment_list", SegmentList, self.processSegments)
-        self.sub_lane = rospy.Subscriber("~lane_pose",LanePose, self.processLanePose)
-        self.sub_mode = rospy.Subscriber("fsm_node/mode",FSMState, self.processStateChange)
+        # params
+        self.stop_distance = self.setupParam("~stop_distance", 0.25)  # forward threshold distance to the stop line
+        self.stop_distance_y = self.setupParam("~stop_distance_y", 0.10)  # sideways threshold distance to the stop line
+        self.min_segs = self.setupParam("~min_segs", 3)  # minimum number of red segments threshold
+        self.off_time = self.setupParam("~off_time", 2)
+        self.point_distance = self.setupParam("~point_distance", 0.10)  # distance between points
+
+        # Setup publishers
         self.pub_stop_line_reading = rospy.Publisher("~stop_line_reading", StopLineReading, queue_size=1)
         self.pub_stop_line_point = rospy.Publisher("~stop_line_point", MarkerArray, queue_size=1)
         self.pub_at_stop_line = rospy.Publisher("~at_stop_line", BoolStamped, queue_size=1)
 
-        self.sub_switch = rospy.Subscriber("~switch",BoolStamped, self.cbSwitch)
+        # Setup subscribers
+        self.sub_segs = rospy.Subscriber("~segment_list", SegmentList, self.processSegments)
+        self.sub_lane = rospy.Subscriber("~lane_pose", LanePose, self.processLanePose)
+        self.sub_mode = rospy.Subscriber("fsm_node/mode", FSMState, self.processStateChange)
+        self.sub_switch = rospy.Subscriber("~switch", BoolStamped, self.cbSwitch)
 
         self.params_update = rospy.Timer(rospy.Duration.from_sec(1.0), self.updateParams)
 
+        rospy.loginfo("[%s] Initialzed." % self.node_name)
+
     def setupParam(self,param_name,default_value):
         value = rospy.get_param(param_name,default_value)
-        rospy.set_param(param_name,value) #Write to parameter server for transparancy
-        rospy.loginfo("[%s] %s = %s " %(self.node_name,param_name,value))
+        rospy.set_param(param_name,value)  # Write to parameter server for transparancy
+        rospy.loginfo("[%s] %s = %s " % (self.node_name, param_name, value))
         return value
 
-    def updateParams(self,event):
+    def updateParams(self, event):
         self.stop_distance = rospy.get_param("~stop_distance")
         self.stop_distance_y = rospy.get_param("~stop_distance_y")
-        self.min_segs      = rospy.get_param("~min_segs")
-        self.off_time      = rospy.get_param("~off_time")
-        self.point_distance  = rospy.get_param("~point_distance")
+        self.min_segs = rospy.get_param("~min_segs")
+        self.off_time = rospy.get_param("~off_time")
+        self.point_distance = rospy.get_param("~point_distance")
 
     def processStateChange(self, msg):
         if self.state == "INTERSECTION_CONTROL" and (msg.state == "LANE_FOLLOWING" or msg.state == "PARALLEL_AUTONOMY"):
             self.afterIntersectionWork()
-        self.state=msg.state
+        self.state = msg.state
 
     def afterIntersectionWork(self):
         rospy.loginfo("stop line sleep start")
@@ -143,20 +150,21 @@ class StopLineFilterNode(object):
         self.pub_stop_line_reading.publish(stop_line_reading_msg)
 
     def to_lane_frame(self, point):
-        p_homo = np.array([point.x,point.y,1])
+        p_homo = np.array([point.x, point.y, 1])
         phi = self.lane_pose.phi
-        d   = self.lane_pose.d
-        T = np.array([[math.cos(phi), -math.sin(phi), 0],
-                      [math.sin(phi), math.cos(phi) , d],
-                      [0,0,1]])
-        p_new_homo = T.dot(p_homo)
+        d = self.lane_pose.d
+        t = np.array([[math.cos(phi), -math.sin(phi), 0],
+                      [math.sin(phi), math.cos(phi), d],
+                      [0, 0, 1]])
+        p_new_homo = t.dot(p_homo)
         p_new = p_new_homo[0:2]
         return p_new
 
     def stop_line_to_marker(self, point, angle, at_stop_line):
         marker = Marker()
-        marker.header.frame_id = "duplo"
+        marker.header.frame_id = self.veh_name
         marker.header.stamp = rospy.get_rostime()
+        marker.ns = self.veh_name + '/stop_line'
         marker.type = Marker.CUBE
         marker.action = Marker.ADD
         marker.lifetime = rospy.Duration.from_sec(1.0)
@@ -186,7 +194,8 @@ class StopLineFilterNode(object):
 
         return marker
 
-    def make_equiv_classes(self, pairs):
+    @staticmethod
+    def make_equiv_classes(pairs):
         groups = {}
         for (x, y) in pairs:
             xset = groups.get(x, {x})
@@ -196,12 +205,12 @@ class StopLineFilterNode(object):
                 groups[z] = jset
         return set(map(tuple, groups.values()))
 
-    def onShutdown(self):
-        rospy.loginfo("[StopLineFilterNode] Shutdown.")
+    def on_shutdown(self):
+        rospy.loginfo("[%s] Shutdown." % self.node_name)
 
 
 if __name__ == '__main__':
-    rospy.init_node('stop_line_filter',anonymous=False)
+    rospy.init_node('stop_line_filter', anonymous=False)
     lane_filter_node = StopLineFilterNode()
-    rospy.on_shutdown(lane_filter_node.onShutdown)
+    rospy.on_shutdown(lane_filter_node.on_shutdown)
     rospy.spin()
