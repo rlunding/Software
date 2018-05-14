@@ -165,7 +165,8 @@ class StopLineFilterNode(object):
         marker.header.frame_id = self.veh_name
         marker.header.stamp = rospy.get_rostime()
         marker.ns = self.veh_name + '/stop_line'
-        marker.type = Marker.CUBE
+        marker.type = Marker.MESH_RESOURCE
+        marker.mesh_resource = 'package://stop_line_filter/meshes/fence.stl'
         marker.action = Marker.ADD
         marker.lifetime = rospy.Duration.from_sec(1.0)
 
@@ -179,9 +180,11 @@ class StopLineFilterNode(object):
         marker.pose.position.y = point[1]
         marker.pose.position.z = 0.1
 
-        marker.scale.x = 0.3
-        marker.scale.y = 0.01
-        marker.scale.z = 0.1
+        marker.scale.x = marker.scale.y = marker.scale.z = 1
+        # marker.scale.x = 0.3
+        # marker.scale.y = 0.01
+        # marker.scale.z = 0.1
+        
 
         if at_stop_line:
             marker.color.r = 1.0
