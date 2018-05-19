@@ -29,7 +29,7 @@ class StopLineFilterNode(object):
         self.stop_distance = self.setupParam("~stop_distance", 0.25)  # forward threshold distance to the stop line
         self.stop_distance_y = self.setupParam("~stop_distance_y", 0.10)  # sideways threshold distance to the stop line
         self.min_segs = self.setupParam("~min_segs", 3)  # minimum number of red segments threshold
-        self.off_time = self.setupParam("~off_time", 2)
+        self.off_time = self.setupParam("~off_time", 2)  # time (in sec) to sleep
         self.point_distance = self.setupParam("~point_distance", 0.10)  # distance between points
 
         # Setup publishers
