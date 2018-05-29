@@ -48,20 +48,20 @@ class DaguWheelsDriver:
         return min(pwm, maxPWM)
 
     def updatePWM(self):
-        vl = self.leftSpeed*self.left_sgn
-        vr = self.rightSpeed*self.right_sgn
+        vl = self.leftSpeed * self.left_sgn
+        vr = self.rightSpeed * self.right_sgn
+
+        vel_ratio = vl / vr
+        rpm_ratio = self.leftRPM / self.rightRPM
+
+        vl = vel_ratio * (1/rpm_ratio)
+        vr = (1/vel_ratio) * rpm_ratio
 
         pwml = self.PWMvalue(vl, self.LEFT_MOTOR_MIN_PWM, self.LEFT_MOTOR_MAX_PWM)
         pwmr = self.PWMvalue(vr, self.RIGHT_MOTOR_MIN_PWM, self.RIGHT_MOTOR_MAX_PWM)
 
-        el = ((self.leftRPM / 220) - vl) * 2
-        er = ((self.rightRPM / 220) - vr) * 2
-
-        pwml = pwml + int(el)
-        pwmr = pwmr + int(er)
-
         if self.debug:
-            print "el = %5.3f, er = %5.3f, vl = %5.3f, vr = %5.3f, pwml = %3d, pwmr = %3d" % (el, er, vl, vr, pwml, pwmr)
+            print "vel_ratio = %5.3f, rpm_ratio = %5.3f, vl = %5.3f, vr = %5.3f, pwml = %3d, pwmr = %3d" % (vel_ratio, rpm_ratio, vl, vr, pwml, pwmr)
 
         if fabs(vl) < self.SPEED_TOLERANCE:
             leftMotorMode = Adafruit_MotorHAT.RELEASE
