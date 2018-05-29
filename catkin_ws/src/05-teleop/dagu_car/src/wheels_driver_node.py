@@ -3,6 +3,7 @@ import rospy
 from duckietown_msgs.msg import WheelsCmdStamped, BoolStamped
 from dagu_car.dagu_wheels_driver import DaguWheelsDriver
 from std_msgs.msg import Float32
+from math import fabs
 
 
 class WheelsDriverNode(object):
@@ -17,13 +18,12 @@ class WheelsDriverNode(object):
         # add publisher for wheels command wih execution time
         self.msg_wheels_cmd = WheelsCmdStamped()
         self.pub_wheels_cmd = rospy.Publisher("~wheels_cmd_executed", WheelsCmdStamped, queue_size=1)
-        self.pub_relationship = rospy.Publisher("~relationship", Float32, queue_size=1)
 
         # Setup subscribers
         self.sub_topic = rospy.Subscriber("~wheels_cmd", WheelsCmdStamped, self.cbWheelsCmd, queue_size=1)
         self.sub_e_stop = rospy.Subscriber("~emergency_stop", BoolStamped, self.cbEStop, queue_size=1)
-        self.sub_e_stop = rospy.Subscriber("~left_motor_rpm", Float32, self.cbEncoderRPM, queue_size=1)
-        self.sub_e_stop = rospy.Subscriber("~right_motor_rpm", Float32, self.cbEncoderRPM, queue_size=1)
+        self.sub_e_stop = rospy.Subscriber("~left_motor_rpm", Float32, self.cbEncoderRPM, True, queue_size=1)
+        self.sub_e_stop = rospy.Subscriber("~right_motor_rpm", Float32, self.cbEncoderRPM, False, queue_size=1)
 
     def setupParam(self, param_name,default_value):
         value = rospy.get_param(param_name,default_value)
@@ -44,10 +44,11 @@ class WheelsDriverNode(object):
         self.msg_wheels_cmd.vel_right = msg.vel_right
         self.pub_wheels_cmd.publish(self.msg_wheels_cmd)
 
-    def cbEncoderRPM(self, msg):
-        output_msg = Float32()
-        output_msg.data = msg.data / self.driver.leftSpeed
-        self.pub_relationship.publish(output_msg)
+    def cbEncoderRPM(self, msg, left_wheel):
+        if left_wheel:
+            self.driver.setLeftRPM(msg.data)
+        else:
+            self.driver.setRightRPM(msg.data)
 
     def cbEStop(self, msg):
         if msg.header.stamp < self.estop_stamp + rospy.Duration(1):

@@ -37,6 +37,8 @@ class DaguWheelsDriver:
 
         self.leftSpeed = 0.0
         self.rightSpeed = 0.0
+        self.leftRPM = 0.0
+        self.rightRPM = 0.0
         self.updatePWM()
 
     def PWMvalue(self, v, minPWM, maxPWM):
@@ -49,8 +51,8 @@ class DaguWheelsDriver:
         vl = self.leftSpeed*self.left_sgn
         vr = self.rightSpeed*self.right_sgn
 
-        pwml = self.PWMvalue(vl, self.LEFT_MOTOR_MIN_PWM, self.LEFT_MOTOR_MAX_PWM)
-        pwmr = self.PWMvalue(vr, self.RIGHT_MOTOR_MIN_PWM, self.RIGHT_MOTOR_MAX_PWM)
+        pwml = self.PWMvalue(vl, self.LEFT_MOTOR_MIN_PWM, self.LEFT_MOTOR_MAX_PWM) + ((self.leftRPM / 220) - vl) * 2
+        pwmr = self.PWMvalue(vr, self.RIGHT_MOTOR_MIN_PWM, self.RIGHT_MOTOR_MAX_PWM) + ((self.rightRPM / 220) - vr) * 2
 
         if self.debug:
             print "v = %5.3f, u = %5.3f, vl = %5.3f, vr = %5.3f, pwml = %3d, pwmr = %3d" % (v, u, vl, vr, pwml, pwmr)
@@ -79,6 +81,14 @@ class DaguWheelsDriver:
     def setWheelsSpeed(self, left, right):
         self.leftSpeed = left
         self.rightSpeed = right
+        self.updatePWM()
+
+    def setLeftRPM(self, left):
+        self.leftRPM = left
+        self.updatePWM()
+
+    def setRightRPM(self, right):
+        self.rightRPM = right
         self.updatePWM()
 
     def __del__(self):
