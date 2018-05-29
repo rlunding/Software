@@ -51,4 +51,13 @@
     <include file="$(find dagu_car)/launch/wheels_driver_node.launch">
         <arg name="veh" value="$(arg veh)"/>
     </include>
+
+    <!-- Wheel encoder node (reading from arduino) -->
+    <remap from="left_motor_rpm" to="wheels_driver_node/left_motor_rpm" />
+    <remap from="right_motor_rpm" to="wheels_driver_node/right_motor_rpm" />
+    <node ns="$(arg veh)" pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">
+        <param name="port" value="/dev/ttyUSB0"/>
+        <param name="baud" value="57600"/>
+    </node>
+
 </launch>

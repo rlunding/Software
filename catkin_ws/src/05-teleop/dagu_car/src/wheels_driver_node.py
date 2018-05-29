@@ -2,36 +2,40 @@
 import rospy
 from duckietown_msgs.msg import WheelsCmdStamped, BoolStamped
 from dagu_car.dagu_wheels_driver import DaguWheelsDriver
+from std_msgs.msg import Float32
+
 
 class WheelsDriverNode(object):
     def __init__(self):
         self.node_name = rospy.get_name()
-        rospy.loginfo("[%s] Initializing " %(self.node_name))
-        self.estop=False
+        rospy.loginfo("[%s] Initializing " % self.node_name)
+        self.estop = False
         self.estop_stamp = rospy.get_rostime()
 
         # Setup publishers
         self.driver = DaguWheelsDriver()
-        #add publisher for wheels command wih execution time
+        # add publisher for wheels command wih execution time
         self.msg_wheels_cmd = WheelsCmdStamped()
-        self.pub_wheels_cmd = rospy.Publisher("~wheels_cmd_executed",WheelsCmdStamped, queue_size=1)
+        self.pub_wheels_cmd = rospy.Publisher("~wheels_cmd_executed", WheelsCmdStamped, queue_size=1)
+        self.pub_relationship = rospy.Publisher("~relationship", Float32, queue_size=1)
 
         # Setup subscribers
-        self.control_constant = 1.0
         self.sub_topic = rospy.Subscriber("~wheels_cmd", WheelsCmdStamped, self.cbWheelsCmd, queue_size=1)
         self.sub_e_stop = rospy.Subscriber("~emergency_stop", BoolStamped, self.cbEStop, queue_size=1)
+        self.sub_e_stop = rospy.Subscriber("~left_motor_rpm", Float32, self.cbEncoderRPM, queue_size=1)
+        self.sub_e_stop = rospy.Subscriber("~right_motor_rpm", Float32, self.cbEncoderRPM, queue_size=1)
 
-    def setupParam(self,param_name,default_value):
+    def setupParam(self, param_name,default_value):
         value = rospy.get_param(param_name,default_value)
-        rospy.set_param(param_name,value) #Write to parameter server for transparancy
-        rospy.loginfo("[%s] %s = %s " %(self.node_name,param_name,value))
+        rospy.set_param(param_name, value)  # Write to parameter server for transparency
+        rospy.loginfo("[%s] %s = %s " % (self.node_name, param_name, value))
         return value
 
-    def cbWheelsCmd(self,msg):
+    def cbWheelsCmd(self, msg):
         if self.estop:
-            self.driver.setWheelsSpeed(left=0.0,right=0.0)
+            self.driver.setWheelsSpeed(left=0.0, right=0.0)
             return
-        self.driver.setWheelsSpeed(left=msg.vel_left,right=msg.vel_right)
+        self.driver.setWheelsSpeed(left=msg.vel_left, right=msg.vel_right)
         # Put the wheel commands in a message and publish
         self.msg_wheels_cmd.header = msg.header
         # Record the time the command was given to the wheels_driver
@@ -39,6 +43,11 @@ class WheelsDriverNode(object):
         self.msg_wheels_cmd.vel_left = msg.vel_left
         self.msg_wheels_cmd.vel_right = msg.vel_right
         self.pub_wheels_cmd.publish(self.msg_wheels_cmd)
+
+    def cbEncoderRPM(self, msg):
+        output_msg = Float32()
+        output_msg.data = msg.data / self.driver.leftSpeed
+        self.pub_relationship.publish(output_msg)
 
     def cbEStop(self, msg):
         if msg.header.stamp < self.estop_stamp + rospy.Duration(1):
@@ -52,8 +61,9 @@ class WheelsDriverNode(object):
             rospy.loginfo("[%s] Emergency Stop Released" % self.node_name)
 
     def on_shutdown(self):
-        self.driver.setWheelsSpeed(left=0.0,right=0.0)
-        rospy.loginfo("[%s] Shutting down."%(rospy.get_name()))
+        self.driver.setWheelsSpeed(left=0.0, right=0.0)
+        rospy.loginfo("[%s] Shutting down." % (rospy.get_name()))
+
 
 if __name__ == '__main__':
     # Initialize the node with rospy
