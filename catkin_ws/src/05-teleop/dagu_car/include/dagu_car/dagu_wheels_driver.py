@@ -54,11 +54,11 @@ class DaguWheelsDriver:
         vel_ratio = 1
         rpm_ratio = 1
         if vl != 0 and vr != 0 and self.leftRPM != 0 and self.rightRPM != 0:
-            vel_ratio = vl / vr
-            rpm_ratio = self.leftRPM / self.rightRPM
+            vel_ratio = min(max(fabs(vl / vr), 0.5), 2.0)
+            rpm_ratio = min(max(self.leftRPM / self.rightRPM, 0.5), 2.0)
 
-            vl = vl * (vel_ratio * (1/rpm_ratio))
-            vr = vr * ((1/vel_ratio) * rpm_ratio)
+            vl = vl + ((vel_ratio * (1/rpm_ratio)) * 0.2) - 0.2
+            vr = vr + (((1/vel_ratio) * rpm_ratio) * 0.2) - 0.2
 
         pwml = self.PWMvalue(vl, self.LEFT_MOTOR_MIN_PWM, self.LEFT_MOTOR_MAX_PWM)
         pwmr = self.PWMvalue(vr, self.RIGHT_MOTOR_MIN_PWM, self.RIGHT_MOTOR_MAX_PWM)
