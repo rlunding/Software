@@ -92,11 +92,8 @@ class DaguWheelsDriver:
         self.rightSpeed = right
         self.updatePWM()
 
-    def setLeftRPM(self, left):
+    def setRPM(self, left, right):
         self.leftRPM = left
-        self.updatePWM()
-
-    def setRightRPM(self, right):
         self.rightRPM = right
         self.updatePWM()
 

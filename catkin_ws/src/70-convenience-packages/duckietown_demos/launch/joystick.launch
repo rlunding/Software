@@ -53,8 +53,7 @@
     </include>
 
     <!-- Wheel encoder node (reading from arduino) -->
-    <remap from="left_motor_rpm" to="wheels_driver_node/left_motor_rpm" />
-    <remap from="right_motor_rpm" to="wheels_driver_node/right_motor_rpm" />
+    <remap from="motor_rpm" to="wheels_driver_node/motor_rpm" />
     <node ns="$(arg veh)" pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">
         <param name="port" value="/dev/ttyUSB0"/>
         <param name="baud" value="57600"/>

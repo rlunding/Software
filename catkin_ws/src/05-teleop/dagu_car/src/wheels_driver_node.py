@@ -2,7 +2,7 @@
 import rospy
 from duckietown_msgs.msg import WheelsCmdStamped, BoolStamped
 from dagu_car.dagu_wheels_driver import DaguWheelsDriver
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32MultiArray
 from math import fabs
 
 
@@ -22,8 +22,7 @@ class WheelsDriverNode(object):
         # Setup subscribers
         self.sub_topic = rospy.Subscriber("~wheels_cmd", WheelsCmdStamped, self.cbWheelsCmd, queue_size=1)
         self.sub_e_stop = rospy.Subscriber("~emergency_stop", BoolStamped, self.cbEStop, queue_size=1)
-        self.sub_e_stop = rospy.Subscriber("~left_motor_rpm", Float32, self.cbEncoderRPM, True, queue_size=1)
-        self.sub_e_stop = rospy.Subscriber("~right_motor_rpm", Float32, self.cbEncoderRPM, False, queue_size=1)
+        self.sub_e_stop = rospy.Subscriber("~motor_rpm", Float32MultiArray, self.cbEncoderRPM, queue_size=1)
 
     def setupParam(self, param_name,default_value):
         value = rospy.get_param(param_name,default_value)
@@ -44,11 +43,8 @@ class WheelsDriverNode(object):
         self.msg_wheels_cmd.vel_right = msg.vel_right
         self.pub_wheels_cmd.publish(self.msg_wheels_cmd)
 
-    def cbEncoderRPM(self, msg, left_wheel):
-        if left_wheel:
-            self.driver.setLeftRPM(msg.data)
-        else:
-            self.driver.setRightRPM(msg.data)
+    def cbEncoderRPM(self, msg):
+        self.driver.setRPM(msg.data[0], msg.data[1])
 
     def cbEStop(self, msg):
         if msg.header.stamp < self.estop_stamp + rospy.Duration(1):
