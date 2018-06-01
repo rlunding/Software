@@ -5,8 +5,8 @@ detector:
   - line_detector.LineDetectorHLS
   - configuration:
       dilation_kernel_size: 3
-      canny_thresholds: [60,150]
-      hough_threshold: 20
+      canny_thresholds: [80,200]
+      hough_threshold: 2
       hough_min_line_length: 3
       hough_max_line_gap:    1
 
