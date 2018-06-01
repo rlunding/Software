@@ -106,7 +106,7 @@ class LineDetectorHLS(Configurable, LineDetectorInterface):
 
     def setImage(self, bgr):
         self.bgr = np.copy(bgr)
-        self.hls = cv2.cvtColor(bgr, cv2.COLOR_RGB2HLS)
+        self.hls = cv2.cvtColor(bgr, cv2.COLOR_BGR2HLS)
         self.edges = self._findEdge(self.bgr)
   
     def getImage(self):
