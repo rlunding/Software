@@ -2,7 +2,7 @@
 import rospy
 from duckietown_msgs.msg import WheelsCmdStamped, BoolStamped
 from dagu_car.dagu_wheels_driver import DaguWheelsDriver
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Int16MultiArray
 from math import fabs
 
 
@@ -22,7 +22,7 @@ class WheelsDriverNode(object):
         # Setup subscribers
         self.sub_topic = rospy.Subscriber("~wheels_cmd", WheelsCmdStamped, self.cbWheelsCmd, queue_size=1)
         self.sub_e_stop = rospy.Subscriber("~emergency_stop", BoolStamped, self.cbEStop, queue_size=1)
-        self.sub_e_stop = rospy.Subscriber("~motor_rpm", Float32MultiArray, self.cbEncoderRPM, queue_size=1)
+        self.sub_motor_rpm = rospy.Subscriber("~motor_rpm", Int16MultiArray, self.cbEncoderRPM, queue_size=1)
 
     def setupParam(self, param_name,default_value):
         value = rospy.get_param(param_name,default_value)
