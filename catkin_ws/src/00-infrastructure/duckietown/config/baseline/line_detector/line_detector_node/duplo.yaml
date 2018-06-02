@@ -10,9 +10,9 @@ detector:
       hough_min_line_length: 3
       hough_max_line_gap:    1
 
-      hls_white1:  [0,180,0]
+      hls_white1:  [0,175,0]
       hls_white2:  [100,255,255]
       hls_yellow1: [10,100,150]
-      hls_yellow2: [40,180,255]
+      hls_yellow2: [40,190,255]
       hls_red1:    [165,100,100]
       hls_red2:    [180,255,255]
