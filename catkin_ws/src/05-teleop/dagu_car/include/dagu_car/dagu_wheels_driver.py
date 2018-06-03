@@ -9,6 +9,7 @@
 #          Dmitry Yershov <dmitry.s.yershov@gmail.com>
 #          Shih-Yuan Liu <syliu@mit.edu>
 
+from __future__ import division
 from Adafruit_MotorHAT import Adafruit_MotorHAT
 from math import fabs, floor
 
@@ -57,8 +58,8 @@ class DaguWheelsDriver:
             vel_ratio = min(max(fabs(vl / vr), 0.5), 2.0)
             rpm_ratio = min(max(self.leftRPM / self.rightRPM, 0.5), 2.0)
 
-            vl = vl + ((vel_ratio * (1/rpm_ratio)) * 0.2) - 0.2
-            vr = vr + (((1/vel_ratio) * rpm_ratio) * 0.2) - 0.2
+            vl = vl + ((vel_ratio * (1/rpm_ratio)) * vl) - vl
+            vr = vr + (((1/vel_ratio) * rpm_ratio) * vl) - vl
 
         pwml = self.PWMvalue(vl, self.LEFT_MOTOR_MIN_PWM, self.LEFT_MOTOR_MAX_PWM)
         pwmr = self.PWMvalue(vr, self.RIGHT_MOTOR_MIN_PWM, self.RIGHT_MOTOR_MAX_PWM)
