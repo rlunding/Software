@@ -4,7 +4,9 @@ import rospy
 import yaml
 import thread
 import io
+import numpy as np
 
+from duckietown_utils.jpg import image_cv_from_jpg
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image, CompressedImage, CameraInfo
 from sensor_msgs.srv import SetCameraInfo, SetCameraInfoResponse
@@ -22,6 +24,10 @@ class CameraNode(object):
         self.framerate_low = self.setupParam("~framerate_low",15.0)
         self.res_w = self.setupParam("~res_w",640)
         self.res_h = self.setupParam("~res_h",480)
+	self.rg = self.setupParam("~rg", 1)
+	self.bg = self.setupParam("~bg", 1)
+	self.counter = 0
+	#self.params_update = rospy.Timer(rospy.Duration.from_sec(1.0), self.updateParams)
 
         self.image_msg = CompressedImage()
 
@@ -31,7 +37,8 @@ class CameraNode(object):
         self.framerate = self.framerate_high # default to high
         self.camera.framerate = self.framerate
         self.camera.resolution = (self.res_w,self.res_h)
-
+	self.camera.awb_mode = 'off'
+	self.camera.awb_gains = (self.rg, self.bg)
 
         # For intrinsic calibration
         self.cali_file_folder = get_duckiefleet_root() + "/calibrations/camera_intrinsic/"
@@ -95,7 +102,32 @@ class CameraNode(object):
             image_msg.header.stamp = stamp
             image_msg.header.frame_id = self.frame_id
             publisher.publish(image_msg)
-                        
+	    #self.camera.awb_gains = (self.rg, self.bg)
+            
+	    if self.counter % 10 == 0:            
+	    	image_cv = image_cv_from_jpg(image_msg.data)
+	    	b, g, r = (np.mean(image_cv[:100, self.res_w/2-50:self.res_w/2+50, i]) for i in range(3))
+	    	rospy.loginfo("[%s] RG:%5.2f, BG: %5.2f (%3d, %3d, %3d)" % (self.node_name, self.rg, self.bg, r, g, b))
+	    	if  abs(r - g) > 20:
+		    if r > g: 
+		    	self.rg -= 0.1
+		    else:
+		    	self.rg += 0.1
+	    	if abs(b - g) > 20:
+		    if b > g:
+		    	self.bg -= 0.1
+		    else:
+		    	self.bg += 0.1
+	    	self.rg = min(max(self.rg, 0.5), 3.0)
+	    	self.bg = min(max(self.bg, 0.5), 3.0)
+	    	self.camera.awb_gains = (self.rg, self.bg)
+	    	#rospy.set_param("~rg", self.rg)
+	    	#rospy.set_param("~bg", self.bg)
+		self.counter = 0
+	    self.counter += 1
+	   
+
+
             # Clear stream
             stream.seek(0)
             stream.truncate()
@@ -111,6 +143,10 @@ class CameraNode(object):
         rospy.set_param(param_name,value) #Write to parameter server for transparancy
         rospy.loginfo("[%s] %s = %s " %(self.node_name,param_name,value))
         return value
+
+    def updateParams(self, event):
+	self.rg = rospy.get_param("~rg")
+	self.bg = rospy.get_param("~bg")
 
     def onShutdown(self):
         rospy.loginfo("[%s] Closing camera." %(self.node_name))
